@@ -31,7 +31,8 @@ model = Classifier.LogisticRegression(l1_coef=0.001)
 #  * There will also be stochastic gradient descent with minibatches
 train!(model, trainSet, method=:l_bfgs, max_iter = 1000, break_every = 100) do iter
   x,y = trainingCurve(model)
-  lineplot(x, y)
+  # integrated with UnicodePlots.jl for working in the REPL
+  print(lineplot(x, y))
 end
 
 ŷ = predict(model, testSet)
