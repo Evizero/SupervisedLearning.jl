@@ -1,5 +1,17 @@
 using SupervisedLearning
 using Base.Test
 
-# write your own tests here
-@test 1 == 1
+function msg(args...)
+  println("   --> ", args...)
+end
+
+tests = [
+  "tst_datasource.jl"
+]
+
+for t in tests
+  println("[->] $t")
+  include(t)
+  println("[OK] $t")
+  println("====================================================================")
+end
