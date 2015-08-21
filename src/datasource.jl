@@ -2,6 +2,7 @@ export DataSource, LabeledDataSource
 export InMemoryLabeledDataSource
 export nobs, nvar, features, targets
 
+using ArrayViews
 import StatsBase.nobs
 
 abstract DataSource
@@ -21,28 +22,28 @@ targets(source::LabeledDataSource, offset::Int, length::Int) = throw(MethodError
 # In-memory labeled sources
 
 immutable InMemoryLabeledDataSource{F<:FloatingPoint,N} <: LabeledDataSource
-  features::Array{F,2}
-  targets::Array{F,N}
+  features::AbstractArray{F,2}
+  targets::AbstractArray{F,N}
 
-  function InMemoryLabeledDataSource(features::Array{F,2}, targets::Array{F,1})
+  function InMemoryLabeledDataSource(features::AbstractArray{F,2}, targets::AbstractArray{F,1})
     size(features,2) == length(targets) || throw(DimensionMismatch("Features and targets have to have the same number of observations"))
     new(features, targets)
   end
 
-  function InMemoryLabeledDataSource(features::Array{F,2}, targets::Array{F,2})
+  function InMemoryLabeledDataSource(features::AbstractArray{F,2}, targets::AbstractArray{F,2})
     size(features,2) == size(targets,2) || throw(DimensionMismatch("Features and targets have to have the same number of observations"))
     new(features, targets)
   end
 end
 
-function InMemoryLabeledDataSource{F<:FloatingPoint,N}(features::Array{F,2}, targets::Array{F,N})
+function InMemoryLabeledDataSource{F<:FloatingPoint,N}(features::AbstractArray{F,2}, targets::AbstractArray{F,N})
    InMemoryLabeledDataSource{F,N}(features, targets)
 end
 
 nobs{F<:FloatingPoint,N}(source::InMemoryLabeledDataSource{F,N}) = size(source.features, 2)
 nvar{F<:FloatingPoint,N}(source::InMemoryLabeledDataSource{F,N}) = size(source.features, 1)
 features{F<:FloatingPoint,N}(source::InMemoryLabeledDataSource{F,N}) = source.features
-features{F<:FloatingPoint,N}(source::InMemoryLabeledDataSource{F,N}, offset::Int, length::Int) = source.features[:, offset:(offset+length-1)]
+features{F<:FloatingPoint,N}(source::InMemoryLabeledDataSource{F,N}, offset::Int, length::Int) = view(source.features, :, offset:(offset+length-1))
 targets{F<:FloatingPoint,N}(source::InMemoryLabeledDataSource{F,N}) = source.targets
-targets{F<:FloatingPoint}(source::InMemoryLabeledDataSource{F,1}, offset::Int, length::Int) = source.targets[offset:(offset+length-1)]
-targets{F<:FloatingPoint}(source::InMemoryLabeledDataSource{F,2}, offset::Int, length::Int) = source.targets[:, offset:(offset+length-1)]
+targets{F<:FloatingPoint}(source::InMemoryLabeledDataSource{F,1}, offset::Int, length::Int) = view(source.targets, offset:(offset+length-1))
+targets{F<:FloatingPoint}(source::InMemoryLabeledDataSource{F,2}, offset::Int, length::Int) = view(source.targets, :, offset:(offset+length-1))

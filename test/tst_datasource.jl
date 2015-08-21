@@ -50,6 +50,7 @@ ds = InMemoryLabeledDataSource(X, t)
 @test features(ds) == X
 @test features(ds, 1, 1) == [1. 4.]'
 @test features(ds, 2, 2) == [2. 3.; 5. 6.]
+@test targets(ds) == t
 
 ds = InMemoryLabeledDataSource(X, tn)
 @test nobs(ds) == 3
@@ -57,3 +58,4 @@ ds = InMemoryLabeledDataSource(X, tn)
 @test features(ds) == X
 @test features(ds, 1, 1) == [1. 4.]'
 @test features(ds, 2, 2) == [2. 3.; 5. 6.]
+@test targets(ds) == tn
