@@ -5,6 +5,7 @@ msg("DataSource: class hierachy")
 
 @test LabeledDataSource <: DataSource
 @test InMemoryLabeledDataSource <: LabeledDataSource
+@test EncodedInMemoryLabeledDataSource <: InMemoryLabeledDataSource
 
 #-----------------------------------------------------------
 
@@ -30,8 +31,12 @@ X = [1. 2. 3.;
 w = [1.,2.]
 wn = [1. 2.;
       3. 4.]
-@test_throws DimensionMismatch InMemoryLabeledDataSource(X, w)
-@test_throws DimensionMismatch InMemoryLabeledDataSource(X, wn)
+ce1 = MultivalueClassEncoding(["V1","V2"])
+ce2 = OneOfKClassEncoding(["V1","V2"])
+@test_throws DimensionMismatch EncodedInMemoryLabeledDataSource(X, w, ce1)
+@test_throws MethodError EncodedInMemoryLabeledDataSource(X, w, ce2)
+@test_throws DimensionMismatch EncodedInMemoryLabeledDataSource(X, wn, ce2)
+@test_throws MethodError EncodedInMemoryLabeledDataSource(X, wn, ce1)
 
 #-----------------------------------------------------------
 
@@ -45,7 +50,8 @@ tn = [1. 2. 3.;
       7. 8. 9.;
       1. 2. 3.]
 
-ds = InMemoryLabeledDataSource(X, t)
+ce = MultivalueClassEncoding(["V1","V2","V3"])
+ds = EncodedInMemoryLabeledDataSource(X, t, ce)
 @test nobs(ds) == 3
 @test nvar(ds) == 2
 @test bias(ds) == 1.
@@ -54,9 +60,11 @@ ds = InMemoryLabeledDataSource(X, t)
 @test features(ds, 2, 2) == [2. 3.; 5. 6.]
 @test targets(ds, 1, 1) == [1.]
 @test targets(ds, 2, 2) == [2., 3]
+@test nclasses(ds) == 3
+@test labels(ds) == ["V1","V2","V3"]
 
-ds = dataSource(X, t, bias=0.)
-@test typeof(ds) == InMemoryLabeledDataSource{Float64,1}
+ds = dataSource(X, t, ce, bias=0.)
+@test typeof(ds) <: EncodedInMemoryLabeledDataSource
 @test nobs(ds) == 3
 @test nvar(ds) == 2
 @test bias(ds) == 0.
@@ -65,20 +73,25 @@ ds = dataSource(X, t, bias=0.)
 @test features(ds, 2, 2) == [2. 3.; 5. 6.]
 @test targets(ds, 1, 1) == [1.]
 @test targets(ds, 2, 2) == [2., 3]
+@test nclasses(ds) == 3
+@test labels(ds) == ["V1","V2","V3"]
 
-ds = InMemoryLabeledDataSource(X, tn)
+ce = OneOfKClassEncoding(["V1","V2","V3","V4"])
+ds = EncodedInMemoryLabeledDataSource(X, tn, ce, .3)
 @test nobs(ds) == 3
 @test nvar(ds) == 2
-@test bias(ds) == 1.
+@test bias(ds) == .3
 @test features(ds) == X
 @test features(ds, 1, 1) == [1. 4.]'
 @test features(ds, 2, 2) == [2. 3.; 5. 6.]
 @test targets(ds) == tn
 @test targets(ds, 1, 1) == [1. 4. 7. 1.]'
 @test targets(ds, 2, 2) == [2. 3.; 5. 6.; 8. 9.; 2. 3.]
+@test nclasses(ds) == 4
+@test labels(ds) == ["V1","V2","V3","V4"]
 
-ds = dataSource(X, tn, bias=0.)
-@test typeof(ds) == InMemoryLabeledDataSource{Float64,2}
+ds = dataSource(X, tn, ce, bias=0.)
+@test typeof(ds) <: EncodedInMemoryLabeledDataSource
 @test nobs(ds) == 3
 @test nvar(ds) == 2
 @test bias(ds) == 0.
@@ -88,4 +101,15 @@ ds = dataSource(X, tn, bias=0.)
 @test targets(ds) == tn
 @test targets(ds, 1, 1) == [1. 4. 7. 1.]'
 @test targets(ds, 2, 2) == [2. 3.; 5. 6.; 8. 9.; 2. 3.]
+@test nclasses(ds) == 4
+@test labels(ds) == ["V1","V2","V3","V4"]
 
+#-----------------------------------------------------------
+
+msg("LabeledDataSource: DataFrames")
+
+#using RDatasets
+#data = dataset("datasets", "mtcars")
+#formula = AM ~ DRat + WT
+#ds = dataSource(formula, data)
+#@test bias(ds) == 1.

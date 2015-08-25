@@ -16,7 +16,7 @@ data = dataset("datasets", "mtcars")
 # There will also be support for datastreaming from HDF5
 problemSet = dataSource(AM ~ DRat + WT, data)
 
-# doesn't actually copy the data, but indicies
+# Methods for splitting the abstract data sets
 trainSet, testSet = splitTrainTest(problemSet, p_train = .75)
 
 # Specifies the model and modelspecific parameter
