@@ -1,6 +1,6 @@
 export DataSource, LabeledDataSource
 export InMemoryLabeledDataSource
-export nobs, nvar, features, targets
+export nobs, nvar, features, targets, bias
 export dataSource
 
 using ArrayViews
@@ -19,26 +19,28 @@ abstract LabeledDataSource <: DataSource
 
 targets(source::LabeledDataSource) = throw(MethodError("Not implemented for the given datasource type"))
 targets(source::LabeledDataSource, offset::Int, length::Int) = throw(MethodError("Not implemented for the given datasource type"))
+bias(source::LabeledDataSource) = throw(MethodError("Not implemented for the given datasource type"))
 
 # In-memory labeled sources
 
 immutable InMemoryLabeledDataSource{F<:FloatingPoint,N} <: LabeledDataSource
   features::AbstractArray{F,2}
   targets::AbstractArray{F,N}
+  bias::F
 
-  function InMemoryLabeledDataSource(features::AbstractArray{F,2}, targets::AbstractArray{F,1})
+  function InMemoryLabeledDataSource(features::AbstractArray{F,2}, targets::AbstractArray{F,1}, bias::F)
     size(features,2) == length(targets) || throw(DimensionMismatch("Features and targets have to have the same number of observations"))
-    new(features, targets)
+    new(features, targets, bias)
   end
 
-  function InMemoryLabeledDataSource(features::AbstractArray{F,2}, targets::AbstractArray{F,2})
+  function InMemoryLabeledDataSource(features::AbstractArray{F,2}, targets::AbstractArray{F,2}, bias::F)
     size(features,2) == size(targets,2) || throw(DimensionMismatch("Features and targets have to have the same number of observations"))
-    new(features, targets)
+    new(features, targets, bias)
   end
 end
 
-function InMemoryLabeledDataSource{F<:FloatingPoint,N}(features::AbstractArray{F,2}, targets::AbstractArray{F,N})
-   InMemoryLabeledDataSource{F,N}(features, targets)
+function InMemoryLabeledDataSource{F<:FloatingPoint,N}(features::AbstractArray{F,2}, targets::AbstractArray{F,N}, bias::F = 1.)
+   InMemoryLabeledDataSource{F,N}(features, targets, bias)
 end
 
 nobs{F<:FloatingPoint,N}(source::InMemoryLabeledDataSource{F,N}) = size(source.features, 2)
@@ -48,9 +50,10 @@ features{F<:FloatingPoint,N}(source::InMemoryLabeledDataSource{F,N}, offset::Int
 targets{F<:FloatingPoint,N}(source::InMemoryLabeledDataSource{F,N}) = source.targets
 targets{F<:FloatingPoint}(source::InMemoryLabeledDataSource{F,1}, offset::Int, length::Int) = view(source.targets, offset:(offset+length-1))
 targets{F<:FloatingPoint}(source::InMemoryLabeledDataSource{F,2}, offset::Int, length::Int) = view(source.targets, :, offset:(offset+length-1))
+bias{F<:FloatingPoint,N}(source::InMemoryLabeledDataSource{F,N}) = source.bias
 
 # Choose best DataSource for the parameters
 
-function dataSource{F<:FloatingPoint,N}(features::AbstractArray{F,2}, targets::AbstractArray{F,N})
-  InMemoryLabeledDataSource(features, targets)
+function dataSource{F<:FloatingPoint,N}(features::AbstractArray{F,2}, targets::AbstractArray{F,N}; bias::F = 1.)
+  InMemoryLabeledDataSource(features, targets, bias)
 end

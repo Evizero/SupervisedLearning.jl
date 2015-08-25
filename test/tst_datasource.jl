@@ -19,6 +19,7 @@ source = FaultyDataSource()
 @test_throws MethodError features(source, 1, 2)
 @test_throws MethodError targets(source)
 @test_throws MethodError targets(source, 1, 2)
+@test_throws MethodError bias(source)
 
 #-----------------------------------------------------------
 
@@ -47,16 +48,18 @@ tn = [1. 2. 3.;
 ds = InMemoryLabeledDataSource(X, t)
 @test nobs(ds) == 3
 @test nvar(ds) == 2
+@test bias(ds) == 1.
 @test features(ds) == X
 @test features(ds, 1, 1) == [1. 4.]'
 @test features(ds, 2, 2) == [2. 3.; 5. 6.]
 @test targets(ds, 1, 1) == [1.]
 @test targets(ds, 2, 2) == [2., 3]
 
-ds = dataSource(X, t)
+ds = dataSource(X, t, bias=0.)
 @test typeof(ds) == InMemoryLabeledDataSource{Float64,1}
 @test nobs(ds) == 3
 @test nvar(ds) == 2
+@test bias(ds) == 0.
 @test features(ds) == X
 @test features(ds, 1, 1) == [1. 4.]'
 @test features(ds, 2, 2) == [2. 3.; 5. 6.]
@@ -66,6 +69,7 @@ ds = dataSource(X, t)
 ds = InMemoryLabeledDataSource(X, tn)
 @test nobs(ds) == 3
 @test nvar(ds) == 2
+@test bias(ds) == 1.
 @test features(ds) == X
 @test features(ds, 1, 1) == [1. 4.]'
 @test features(ds, 2, 2) == [2. 3.; 5. 6.]
@@ -73,10 +77,11 @@ ds = InMemoryLabeledDataSource(X, tn)
 @test targets(ds, 1, 1) == [1. 4. 7. 1.]'
 @test targets(ds, 2, 2) == [2. 3.; 5. 6.; 8. 9.; 2. 3.]
 
-ds = dataSource(X, tn)
+ds = dataSource(X, tn, bias=0.)
 @test typeof(ds) == InMemoryLabeledDataSource{Float64,2}
 @test nobs(ds) == 3
 @test nvar(ds) == 2
+@test bias(ds) == 0.
 @test features(ds) == X
 @test features(ds, 1, 1) == [1. 4.]'
 @test features(ds, 2, 2) == [2. 3.; 5. 6.]
