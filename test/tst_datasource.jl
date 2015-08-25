@@ -53,6 +53,16 @@ ds = InMemoryLabeledDataSource(X, t)
 @test targets(ds, 1, 1) == [1.]
 @test targets(ds, 2, 2) == [2., 3]
 
+ds = dataSource(X, t)
+@test typeof(ds) == InMemoryLabeledDataSource{Float64,1}
+@test nobs(ds) == 3
+@test nvar(ds) == 2
+@test features(ds) == X
+@test features(ds, 1, 1) == [1. 4.]'
+@test features(ds, 2, 2) == [2. 3.; 5. 6.]
+@test targets(ds, 1, 1) == [1.]
+@test targets(ds, 2, 2) == [2., 3]
+
 ds = InMemoryLabeledDataSource(X, tn)
 @test nobs(ds) == 3
 @test nvar(ds) == 2
@@ -61,7 +71,16 @@ ds = InMemoryLabeledDataSource(X, tn)
 @test features(ds, 2, 2) == [2. 3.; 5. 6.]
 @test targets(ds) == tn
 @test targets(ds, 1, 1) == [1. 4. 7. 1.]'
-@test targets(ds, 2, 2) == [2. 3.;
-                            5. 6.
-                            8. 9.
-                            2. 3.]
+@test targets(ds, 2, 2) == [2. 3.; 5. 6.; 8. 9.; 2. 3.]
+
+ds = dataSource(X, tn)
+@test typeof(ds) == InMemoryLabeledDataSource{Float64,2}
+@test nobs(ds) == 3
+@test nvar(ds) == 2
+@test features(ds) == X
+@test features(ds, 1, 1) == [1. 4.]'
+@test features(ds, 2, 2) == [2. 3.; 5. 6.]
+@test targets(ds) == tn
+@test targets(ds, 1, 1) == [1. 4. 7. 1.]'
+@test targets(ds, 2, 2) == [2. 3.; 5. 6.; 8. 9.; 2. 3.]
+

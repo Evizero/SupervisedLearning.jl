@@ -1,6 +1,7 @@
 export DataSource, LabeledDataSource
 export InMemoryLabeledDataSource
 export nobs, nvar, features, targets
+export dataSource
 
 using ArrayViews
 import StatsBase.nobs
@@ -47,3 +48,9 @@ features{F<:FloatingPoint,N}(source::InMemoryLabeledDataSource{F,N}, offset::Int
 targets{F<:FloatingPoint,N}(source::InMemoryLabeledDataSource{F,N}) = source.targets
 targets{F<:FloatingPoint}(source::InMemoryLabeledDataSource{F,1}, offset::Int, length::Int) = view(source.targets, offset:(offset+length-1))
 targets{F<:FloatingPoint}(source::InMemoryLabeledDataSource{F,2}, offset::Int, length::Int) = view(source.targets, :, offset:(offset+length-1))
+
+# Choose best DataSource for the parameters
+
+function dataSource{F<:FloatingPoint,N}(features::AbstractArray{F,2}, targets::AbstractArray{F,N})
+  InMemoryLabeledDataSource(features, targets)
+end
