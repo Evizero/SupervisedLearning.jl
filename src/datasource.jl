@@ -1,7 +1,7 @@
 export DataSource, LabeledDataSource, InMemoryLabeledDataSource
-export EncodedInMemoryLabeledDataSource
+export EncodedInMemoryLabeledDataSource, DataFrameLabeledDataSource
 export nobs, nvar, features, targets, bias
-export dataSource
+export dataSource, encodeDataSource
 
 using ArrayViews
 using DataFrames
@@ -77,6 +77,7 @@ targets{E<:ClassEncoding}(source::EncodedInMemoryLabeledDataSource{E,2}, offset:
 bias{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N}) = source.bias
 nclasses{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N}) = nclasses(source.encoding)
 labels{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N}) = labels(source.encoding)
+classDistribution{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N}) = classDistribution(source.encoding, labeldecode(source.encoding, source.targets))
 
 # ==========================================================================
 # DataFrame labeled sources
@@ -97,11 +98,24 @@ function dataSource{E<:ClassEncoding, N}(features::AbstractArray{Float64,2},
 end
 
 function dataSource(formula::Formula, data::DataFrame)
-  mf = ModelFrame(formula, data)
+  DataFrameLabeledDataSource(data, formula)
+end
+
+function dataSource{E<:ClassEncoding}(formula::Formula, data::DataFrame, ::Type{E})
+  encodeDataSource(DataFrameLabeledDataSource(data, formula), E)
+end
+
+# ==========================================================================
+# encode the dataframe
+
+function encodeDataSource{E<:ClassEncoding}(source::DataFrameLabeledDataSource, ::Type{E})
+  mf = ModelFrame(source.formula, source.dataFrame)
   mm = ModelMatrix(mf)
   dfBias = in(0,mm.assign)
   X = dfBias ? mm.m[:,2:end]: mm.m
   extBias = dfBias * 1.0
   t = convert(Vector{Float64}, model_response(mf))
-  dataSource(X', t, bias = extBias)
+  ce = E(t)
+  t_enc = labelencode(ce, t)
+  dataSource(X', t_enc, ce, bias=extBias)
 end

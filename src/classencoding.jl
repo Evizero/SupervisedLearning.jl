@@ -9,6 +9,7 @@ using MLBase
 import MLBase.labelencode
 import MLBase.labeldecode
 import MLBase.groupindices
+import Base.show
 
 # ==========================================================================
 
@@ -144,11 +145,11 @@ end
 
 function labelencode{T}(classEncoding::ZeroOneClassEncoding{T}, targets::Vector{T})
   indicies = labelencode(classEncoding.labelmap, targets)
-  indicies - 1
+  float(indicies - 1)
 end
 
-function labeldecode{T}(classEncoding::ZeroOneClassEncoding{T}, values::Vector{Int})
-  indicies = values + 1
+function labeldecode{T}(classEncoding::ZeroOneClassEncoding{T}, values::Vector{Float64})
+  indicies = round(Integer, values + 1)
   labeldecode(classEncoding.labelmap, indicies)
 end
 
@@ -156,34 +157,35 @@ end
 
 function labelencode{T}(classEncoding::SignedClassEncoding{T}, targets::Vector{T})
   indicies = labelencode(classEncoding.labelmap, targets)
-  round(Integer,2(indicies - 1.5))
+  2(indicies - 1.5)
 end
 
-function labeldecode{T}(classEncoding::SignedClassEncoding{T}, values::Vector{Int})
-  indicies = round(Integer,(values / 2.) + 1.5)
+function labeldecode{T}(classEncoding::SignedClassEncoding{T}, values::Vector{Float64})
+  indicies = round(Integer, (values / 2.) + 1.5)
   labeldecode(classEncoding.labelmap, indicies)
 end
 
 #-----------------------------------------------------------
 
 function labelencode{T}(classEncoding::MultivalueClassEncoding{T}, targets::Vector{T})
-  labelencode(classEncoding.labelmap, targets) - classEncoding.zeroBased*1
+  labelencode(classEncoding.labelmap, targets) - classEncoding.zeroBased*1.
 end
 
-function labeldecode{T}(classEncoding::MultivalueClassEncoding{T}, values::Vector{Int})
-  labeldecode(classEncoding.labelmap, values + classEncoding.zeroBased*1)
+function labeldecode{T}(classEncoding::MultivalueClassEncoding{T}, values::Vector{Float64})
+  indicies = round(Integer, values + classEncoding.zeroBased*1.)
+  labeldecode(classEncoding.labelmap, indicies)
 end
 
 #-----------------------------------------------------------
 
 function labelencode{T}(classEncoding::OneOfKClassEncoding{T}, targets::Vector{T})
   indicies = labelencode(classEncoding.labelmap, targets)
-  convert(Matrix{Float64}, indicatormat(indicies))
+  convert(Matrix{Float64}, indicatormat(indicies)) # this doesn't work if the indexseq is broken (e.g. [1,2,5])
 end
 
 function labeldecode{T}(classEncoding::OneOfKClassEncoding{T}, values::Matrix{Float64})
   numLabels = classEncoding.nlabels
-  indicies = map(iround, values' * collect(1:numLabels))
+  indicies = map(safeRound, values' * collect(1:numLabels))
   labeldecode(classEncoding.labelmap, indicies)
 end
 

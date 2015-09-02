@@ -44,13 +44,12 @@ idx = groupindices(ce, t)
 @test idx[2] == [2,3,5]
 @test classDistribution(ce, t) == (["y","n"], [2, 3])
 @test classDistribution(ce.labelmap, t) == (["y","n"], [2, 3])
-@test pred == [1, 0, 0, 1]
+@test pred == [1., 0, 0, 1]
 @test labeldecode(ce, pred) == y
-@test labeldecode(ce, convert(Vector{Int},pred)) == y
 
 ce = ZeroOneClassEncoding(labelmap(["F","T"]))
-@test labeldecode(ce, [1, 0, 1]) == ["T", "F", "T"]
-@test labeldecode(ce, [0, 1, 0]) == ["F", "T", "F"]
+@test labeldecode(ce, [1., 0, 1]) == ["T", "F", "T"]
+@test labeldecode(ce, [0., 1, 0]) == ["F", "T", "F"]
 
 ce = SignedClassEncoding(t)
 pred = labelencode(ce, y)
@@ -59,13 +58,12 @@ idx = groupindices(ce, t)
 @test idx[2] == [2,3,5]
 @test classDistribution(ce, t) == (["y","n"], [2, 3])
 @test classDistribution(ce.labelmap, t) == (["y","n"], [2, 3])
-@test pred == [1, -1, -1, 1]
+@test pred == [1., -1, -1, 1]
 @test labeldecode(ce, pred) == y
-@test labeldecode(ce, convert(Vector{Int},pred)) == y
 
 ce = SignedClassEncoding(labelmap(["F","T"]))
-@test labeldecode(ce, [1, -1, 1]) == ["T", "F", "T"]
-@test labeldecode(ce, [-1, 1, -1]) == ["F", "T", "F"]
+@test labeldecode(ce, [1., -1, 1]) == ["T", "F", "T"]
+@test labeldecode(ce, [-1., 1, -1]) == ["F", "T", "F"]
 
 # ==========================================================================
 
@@ -113,7 +111,7 @@ idx = groupindices(ce, t)
 @test idx[3] == [3]
 @test classDistribution(ce, t) == (["y","n","k"], [2, 2, 1])
 @test classDistribution(ce.labelmap, t) == (["y","n","k"], [2, 2, 1])
-@test pred == [2, 1, 1, 3, 2]
+@test pred == [2., 1, 1, 3, 2]
 @test labeldecode(ce, pred) == y
 
 ce = MultivalueClassEncoding(t, zero_based=true)
@@ -124,12 +122,12 @@ idx = groupindices(ce, t)
 @test idx[3] == [3]
 @test classDistribution(ce, t) == (["y","n","k"], [2, 2, 1])
 @test classDistribution(ce.labelmap, t) == (["y","n","k"], [2, 2, 1])
-@test pred == [1, 0, 0, 2, 1]
+@test pred == [1., 0, 0, 2, 1]
 @test labeldecode(ce, pred) == y
 
 ce = MultivalueClassEncoding(labelmap(["F","T", "W"]))
-@test labeldecode(ce, [2, 1, 3]) == ["T", "F", "W"]
-@test labeldecode(ce, [3, 2, 1]) == ["W", "T", "F"]
+@test labeldecode(ce, [2., 1, 3]) == ["T", "F", "W"]
+@test labeldecode(ce, [3., 2, 1]) == ["W", "T", "F"]
 
 ce = OneOfKClassEncoding(t)
 pred = labelencode(ce, y)
