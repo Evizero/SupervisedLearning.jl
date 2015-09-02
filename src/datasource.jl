@@ -7,23 +7,32 @@ using ArrayViews
 using DataFrames
 import StatsBase.nobs
 
+macro _not_implemented()
+  quote
+    throw(ArgumentError("Not implemented for the given datasource type"))
+  end
+end
+
+# ==========================================================================
+
 abstract DataSource
 
-nobs(source::DataSource) = throw(MethodError("Not implemented for the given datasource type"))
-nvar(source::DataSource) = throw(MethodError("Not implemented for the given datasource type"))
-features(source::DataSource) = throw(MethodError("Not implemented for the given datasource type"))
-features(source::DataSource, offset::Int, length::Int) = throw(MethodError("Not implemented for the given datasource type"))
+nobs(source::DataSource) = @_not_implemented
+nvar(source::DataSource) = @_not_implemented
+features(source::DataSource) = @_not_implemented
+features(source::DataSource, offset::Int, length::Int) = @_not_implemented
 
 # labeled sources
 
 abstract LabeledDataSource <: DataSource
 abstract InMemoryLabeledDataSource <: LabeledDataSource
 
-targets(source::LabeledDataSource) = throw(MethodError("Not implemented for the given datasource type"))
-targets(source::LabeledDataSource, offset::Int, length::Int) = throw(MethodError("Not implemented for the given datasource type"))
-bias(source::LabeledDataSource) = throw(MethodError("Not implemented for the given datasource type"))
-nclasses(source::LabeledDataSource) = throw(MethodError("Not implemented for the given datasource type"))
-labels(source::LabeledDataSource) = throw(MethodError("Not implemented for the given datasource type"))
+targets(source::LabeledDataSource) = @_not_implemented
+targets(source::LabeledDataSource, offset::Int, length::Int) = @_not_implemented
+bias(source::LabeledDataSource) = @_not_implemented
+nclasses(source::LabeledDataSource) = @_not_implemented
+labels(source::LabeledDataSource) = @_not_implemented
+classDistribution(source::LabeledDataSource) = @_not_implemented
 
 # ==========================================================================
 # In-memory labeled sources
@@ -38,7 +47,7 @@ immutable EncodedInMemoryLabeledDataSource{E<:ClassEncoding,N} <: InMemoryLabele
                                             targets::AbstractArray{Float64,1},
                                             encoding::E,
                                             bias::Float64)
-    (typeof(encoding) <: OneOfKClassEncoding) && throw(MethodError("Can't have OneOutOfK-Encoding with a one vector as target"))
+    (typeof(encoding) <: OneOfKClassEncoding) && throw(ArgumentError("Can't have OneOutOfK-Encoding with a one vector as target"))
     size(features,2) == length(targets) || throw(DimensionMismatch("Features and targets have to have the same number of observations"))
     new(features, targets, encoding, bias)
   end
@@ -88,6 +97,21 @@ immutable DataFrameLabeledDataSource <: LabeledDataSource
 end
 
 # ==========================================================================
+# Encode a DataFrameLabeledDataSource
+
+function encodeDataSource{E<:ClassEncoding}(source::DataFrameLabeledDataSource, ::Type{E})
+  mf = ModelFrame(source.formula, source.dataFrame)
+  mm = ModelMatrix(mf)
+  dfBias = in(0,mm.assign)
+  X = dfBias ? mm.m[:,2:end]: mm.m
+  extBias = dfBias * 1.0
+  t = convert(Vector{Float64}, model_response(mf))
+  ce = E(t)
+  t_enc = labelencode(ce, t)
+  dataSource(X', t_enc, ce, bias=extBias)
+end
+
+# ==========================================================================
 # Choose best DataSource for the parameters
 
 function dataSource{E<:ClassEncoding, N}(features::AbstractArray{Float64,2},
@@ -103,19 +127,4 @@ end
 
 function dataSource{E<:ClassEncoding}(formula::Formula, data::DataFrame, ::Type{E})
   encodeDataSource(DataFrameLabeledDataSource(data, formula), E)
-end
-
-# ==========================================================================
-# encode the dataframe
-
-function encodeDataSource{E<:ClassEncoding}(source::DataFrameLabeledDataSource, ::Type{E})
-  mf = ModelFrame(source.formula, source.dataFrame)
-  mm = ModelMatrix(mf)
-  dfBias = in(0,mm.assign)
-  X = dfBias ? mm.m[:,2:end]: mm.m
-  extBias = dfBias * 1.0
-  t = convert(Vector{Float64}, model_response(mf))
-  ce = E(t)
-  t_enc = labelencode(ce, t)
-  dataSource(X', t_enc, ce, bias=extBias)
 end

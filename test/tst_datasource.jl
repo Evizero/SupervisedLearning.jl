@@ -15,12 +15,12 @@ immutable FaultyDataSource <: LabeledDataSource
 end
 
 source = FaultyDataSource()
-@test_throws MethodError nobs(source)
-@test_throws MethodError features(source)
-@test_throws MethodError features(source, 1, 2)
-@test_throws MethodError targets(source)
-@test_throws MethodError targets(source, 1, 2)
-@test_throws MethodError bias(source)
+@test_throws ArgumentError nobs(source)
+@test_throws ArgumentError features(source)
+@test_throws ArgumentError features(source, 1, 2)
+@test_throws ArgumentError targets(source)
+@test_throws ArgumentError targets(source, 1, 2)
+@test_throws ArgumentError bias(source)
 
 #-----------------------------------------------------------
 
@@ -34,7 +34,7 @@ wn = [1. 2.;
 ce1 = MultivalueClassEncoding(["V1","V2"])
 ce2 = OneOfKClassEncoding(["V1","V2"])
 @test_throws DimensionMismatch EncodedInMemoryLabeledDataSource(X, w, ce1)
-@test_throws MethodError EncodedInMemoryLabeledDataSource(X, w, ce2)
+@test_throws ArgumentError EncodedInMemoryLabeledDataSource(X, w, ce2)
 @test_throws DimensionMismatch EncodedInMemoryLabeledDataSource(X, wn, ce2)
 @test_throws MethodError EncodedInMemoryLabeledDataSource(X, wn, ce1)
 
