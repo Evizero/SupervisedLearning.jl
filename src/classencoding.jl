@@ -3,9 +3,6 @@ export OneHotClassEncoding
 export labelencode, labeldecode, groupindices
 export nclasses, labels, classDistribution
 
-using Reexport
-using MLBase
-
 import MLBase.labelencode
 import MLBase.labeldecode
 import MLBase.groupindices
