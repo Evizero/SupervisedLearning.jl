@@ -89,7 +89,9 @@ labels{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N}) = labe
 classDistribution{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N}) = classDistribution(source.encoding, labeldecode(source.encoding, source.targets))
 
 function splitTrainTest!{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N};
-                                             p_train = .7)
+                                             p_train::FloatingPoint = .7)
+  @assert p_train < 1.
+  @assert p_train > 0.
   X = source.features
   t = source.targets
   ce = source.encoding
