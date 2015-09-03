@@ -1,6 +1,6 @@
 export DataSource, LabeledDataSource, InMemoryLabeledDataSource
 export EncodedInMemoryLabeledDataSource, DataFrameLabeledDataSource
-export nobs, nvar, features, targets, bias, splitTrainTest
+export nobs, nvar, features, targets, bias, splitTrainTest!
 export dataSource, encodeDataSource
 
 using ArrayViews
@@ -63,9 +63,9 @@ immutable EncodedInMemoryLabeledDataSource{E<:ClassEncoding,N} <: InMemoryLabele
 end
 
 function EncodedInMemoryLabeledDataSource{E<:ClassEncoding}(features::AbstractArray{Float64,2},
-                                          targets::AbstractArray{Float64,1},
-                                          encoding::E,
-                                          bias::Float64 = 1.)
+                                                            targets::AbstractArray{Float64,1},
+                                                            encoding::E,
+                                                            bias::Float64 = 1.)
    EncodedInMemoryLabeledDataSource{E,1}(features, targets, encoding, bias)
 end
 
@@ -88,26 +88,22 @@ nclasses{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N}) = nc
 labels{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N}) = labels(source.encoding)
 classDistribution{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N}) = classDistribution(source.encoding, labeldecode(source.encoding, source.targets))
 
-function splitTrainTest{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N};
-                                            p_train = .7,
-                                            balance_classes = false)
+function splitTrainTest!{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N};
+                                             p_train = .7)
   X = source.features
   t = source.targets
   ce = source.encoding
   bias = source.bias
   n = nobs(source)
   sn = safeFloor(n * p_train)
+  shuffleCols!(X)
   if N == 1
-    trainIdx = collect(balance_classes ? StratifiedRandomSub(t, sn, 1): RandomSub(n, sn, 1))[1]
-    testIdx = setdiff(1:n, trainIdx)
-    trainData = dataSource(X[:, trainIdx], t[trainIdx], ce, bias = bias)
-    testData = dataSource(X[:, testIdx], t[testIdx], ce, bias = bias)
+    trainData = dataSource(view(X, :, 1:sn), view(t, 1:sn), ce, bias = bias)
+    testData = dataSource(view(X, :, (sn+1):n), view(t, (sn+1):n), ce, bias = bias)
     return trainData, testData
   else
-    trainIdx = collect(balance_classes ? StratifiedRandomSub(labeldecode(t), sn, 1): RandomSub(n, sn, 1))[1]
-    testIdx = setdiff(1:n, trainIdx)
-    trainData = dataSource(X[:,trainIdx], t[:,trainIdx], ce, bias = bias)
-    testData = dataSource(X[:,testIdx], t[:,testIdx], ce, bias = bias)
+    trainData = dataSource(view(X, :, 1:sn), view(t, :, 1:sn), ce, bias = bias)
+    testData = dataSource(view(X, :, (sn+1):n), view(t, :, (sn+1):n), ce, bias = bias)
     return trainData, testData
   end
 end

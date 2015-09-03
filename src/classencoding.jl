@@ -145,7 +145,7 @@ function labelencode{T}(classEncoding::ZeroOneClassEncoding{T}, targets::Vector{
   float(indicies - 1)
 end
 
-function labeldecode{T}(classEncoding::ZeroOneClassEncoding{T}, values::Vector{Float64})
+function labeldecode{T}(classEncoding::ZeroOneClassEncoding{T}, values::AbstractVector{Float64})
   indicies = round(Integer, values + 1)
   labeldecode(classEncoding.labelmap, indicies)
 end
@@ -157,7 +157,7 @@ function labelencode{T}(classEncoding::SignedClassEncoding{T}, targets::Vector{T
   2(indicies - 1.5)
 end
 
-function labeldecode{T}(classEncoding::SignedClassEncoding{T}, values::Vector{Float64})
+function labeldecode{T}(classEncoding::SignedClassEncoding{T}, values::AbstractVector{Float64})
   indicies = round(Integer, (values / 2.) + 1.5)
   labeldecode(classEncoding.labelmap, indicies)
 end
@@ -168,7 +168,7 @@ function labelencode{T}(classEncoding::MultivalueClassEncoding{T}, targets::Vect
   labelencode(classEncoding.labelmap, targets) - classEncoding.zeroBased*1.
 end
 
-function labeldecode{T}(classEncoding::MultivalueClassEncoding{T}, values::Vector{Float64})
+function labeldecode{T}(classEncoding::MultivalueClassEncoding{T}, values::AbstractVector{Float64})
   indicies = round(Integer, values + classEncoding.zeroBased*1.)
   labeldecode(classEncoding.labelmap, indicies)
 end
@@ -180,7 +180,7 @@ function labelencode{T}(classEncoding::OneOfKClassEncoding{T}, targets::Vector{T
   convert(Matrix{Float64}, indicatormat(indicies)) # this doesn't work if the indexseq is broken (e.g. [1,2,5])
 end
 
-function labeldecode{T}(classEncoding::OneOfKClassEncoding{T}, values::Matrix{Float64})
+function labeldecode{T}(classEncoding::OneOfKClassEncoding{T}, values::AbstractMatrix{Float64})
   numLabels = classEncoding.nlabels
   indicies = map(safeRound, values' * collect(1:numLabels))
   labeldecode(classEncoding.labelmap, indicies)

@@ -18,12 +18,22 @@ tests = [
   "tst_classencoding.jl"
   "tst_datasource.jl"
   "tst_integration.jl"
-#  "bm_datasource.jl"
+]
+
+perf = [
+  "bm_datasource.jl"
 ]
 
 for t in tests
   println("[->] $t")
   include(t)
   println("[OK] $t")
+  println("====================================================================")
+end
+
+for p in perf
+  println("[->] $p")
+  include(p)
+  println("[OK] $p")
   println("====================================================================")
 end

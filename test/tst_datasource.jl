@@ -115,11 +115,15 @@ cen = OneOfKClassEncoding(["V1","V2","V3","V4","V5"])
 tn = labelencode(cen, labeldecode(ce, t))
 
 ds = EncodedInMemoryLabeledDataSource(X, t, ce)
-trainDs, testDs = splitTrainTest(ds, p_train = .7, balance_classes = false)
+trainDs, testDs = splitTrainTest!(ds, p_train = .7)
+@test typeof(trainDs) <: EncodedInMemoryLabeledDataSource
+@test typeof(testDs) <: EncodedInMemoryLabeledDataSource
 @test nobs(trainDs) + nobs(testDs) == nobs(ds)
 
 ds = EncodedInMemoryLabeledDataSource(X, tn, cen)
-trainDs, testDs = splitTrainTest(ds, p_train = .7, balance_classes = false)
+trainDs, testDs = splitTrainTest!(ds, p_train = .7)
+@test typeof(trainDs) <: EncodedInMemoryLabeledDataSource
+@test typeof(testDs) <: EncodedInMemoryLabeledDataSource
 @test nobs(trainDs) + nobs(testDs) == nobs(ds)
 
 #-----------------------------------------------------------
