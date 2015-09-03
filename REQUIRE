@@ -3,5 +3,6 @@ StatsBase
 ArrayViews
 UnicodePlots
 DataFrames
+RDatasets
 Reexport
 MLBase

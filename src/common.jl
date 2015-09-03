@@ -22,7 +22,7 @@ function shuffleCols!(A::Matrix)
   for c = 1:cols
     i = rand(c:cols)
     for r = 1:rows
-      A[r,c], A[r,i] = A[r,i], A[r,c]
+      @inbounds A[r,c], A[r,i] = A[r,i], A[r,c]
     end
   end
   A
