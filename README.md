@@ -68,7 +68,7 @@ trainSet, testSet = splitTrainTest(problemSet, p_train = .75)
 gsResult = gridsearch([.001, .01, .1], [.0001, .0003]) do lr, lambda
 
   # Perform cross validation to get a good estimate for the hyperparameter performance
-  cvResult = crossvalidate(k = 5, trainSet) do trainFold, valFold
+  cvResult = crossvalidate(trainSet, k = 5) do trainFold, valFold
 
     # Specify the model and model-specific parameters
     model = Classifier.LogisticRegression(l2_coef = lambda)
