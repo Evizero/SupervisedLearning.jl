@@ -24,6 +24,9 @@ data = dataset("datasets", "mtcars")
 # There will also be support for datastreaming from HDF5
 problemSet = dataSource(AM ~ DRat + WT, data, SignedClassEncoding)
 
+# Convenient to use with UnicodePlots
+print(barplot(classDistribution(problemSet)...))
+
 # Methods for splitting the abstract data sets
 trainSet, testSet = splitTrainTest(problemSet, p_train = .75)
 
