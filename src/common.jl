@@ -1,4 +1,7 @@
-export shuffleCols!
+export AbstractLearner, AbstractClassifier
+
+abstract AbstractLearner
+abstract AbstractClassifier <: AbstractLearner
 
 function safeRound(num)
   if VERSION < v"0.4-"

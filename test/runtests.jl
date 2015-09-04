@@ -15,6 +15,7 @@ function msg(args...)
 end
 
 tests = [
+  "tst_empiricalrisks.jl"
   "tst_classencoding.jl"
   "tst_datasource.jl"
   "tst_integration.jl"
