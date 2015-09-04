@@ -29,7 +29,7 @@ model = Classifier.LogisticRegression(l2_coef=0.001)
 #  * the do-block is the callback function which also allows for early stopping
 #  * In this case L_BFGS() will result in using Optim.jl with :l_bfgs as backend
 #  * There will also be stochastic gradient descent with minibatches
-train!(model, trainSet, solver=L_BFGS(), max_iter = 1000, break_every = 100) do
+train!(model, trainSet, solver = Solver.L_BFGS(), max_iter = 1000, break_every = 100) do
   x,y = trainingCurve(model)
   # integrated with UnicodePlots.jl for working in the REPL
   print(lineplot(x, y))
