@@ -61,7 +61,8 @@ model = Classifier.LogisticRegression(l2_coef=0.001)
 gsResult = gridsearch([.001, .01, .1], [.0001, .0003]) do lr, lambda
 
   # Perform cross validation to get a good estimate for the hyperparameter performance
-  cvResult = crossvalidate(k = 5, trainSet) do
+  cvResult = crossvalidate(k = 5, trainSet) do trainFold, valFold
+
     # Specify the model and model-specific parameters
     model = Classifier.LogisticRegression(l2_coef = lambda)
 
@@ -69,7 +70,7 @@ gsResult = gridsearch([.001, .01, .1], [.0001, .0003]) do lr, lambda
     solver = Solver.NaiveGradientDescent(learning_rate = lr, normalize_gradient = false)
 
     # train! mutates the model state
-    train!(model, trainSet, method=:l_bfgs, max_iter = 1000, break_every = 100)
+    train!(model, trainFold, solver=solver, max_iter = 1000, break_every = 100)
 
     # make sure to return the trained model
     model
