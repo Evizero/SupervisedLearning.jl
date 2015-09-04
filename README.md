@@ -4,7 +4,15 @@ Work in progress for a front-end supervised learning framework.
 
 [![Build Status](https://travis-ci.org/Evizero/SupervisedLearning.jl.svg?branch=master)](https://travis-ci.org/Evizero/SupervisedLearning.jl)
 
+The goal of this library is manyfold:
+
+- **Education** allow the user to play around with the models, solvers, etc. for educational purposes. Provide a good base for course exercises
+- **Research** Swap out parts of the machine learning pipeline with custom implementations without losing the ability to utilize the rest of the framework. For example to prototype new prediction models.
+- **Application** Porcelain interface to apply machine learning to given datasets in a convenient way. There might be multiple high-level interface for different usergroups (e.g. one that mimics R's caret package)
+
 ## Planned High-level API
+
+this is just a rough draft and object to change
 
 ```Julia
 using SupervisedLearning
