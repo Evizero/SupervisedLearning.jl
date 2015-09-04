@@ -58,6 +58,7 @@ data = dataset("datasets", "mtcars")
 # In this case the dataset will be in-memory.
 # Specifying the encoding is not necessary.
 # The model will select the encoding it needs automatically
+# Trees for example don't need an encoding at all.
 problemSet = dataSource(AM ~ DRat + WT, data)
 
 # Methods for splitting the abstract data sets
