@@ -64,9 +64,6 @@ problemSet = dataSource(AM ~ DRat + WT, data)
 # Methods for splitting the abstract data sets
 trainSet, testSet = splitTrainTest(problemSet, p_train = .75)
 
-# Specifies the model and modelspecific parameter
-model = Classifier.LogisticRegression(l2_coef=0.001)
-
 # Perform a gridsearch over an arbitrary modelspace
 gsResult = gridsearch([.001, .01, .1], [.0001, .0003]) do lr, lambda
 
