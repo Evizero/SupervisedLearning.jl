@@ -24,6 +24,9 @@ data = dataset("datasets", "mtcars")
 # There will also be support for datastreaming from HDF5
 problemSet = dataSource(AM ~ DRat + WT, data, SignedClassEncoding)
 
+# Convenient to use with UnicodePlots
+print(barplot(classDistribution(problemSet)...))
+
 # Methods for splitting the abstract data sets
 trainSet, testSet = splitTrainTest(problemSet, p_train = .75)
 
@@ -68,7 +71,7 @@ trainSet, testSet = splitTrainTest(problemSet, p_train = .75)
 gsResult = gridsearch([.001, .01, .1], [.0001, .0003]) do lr, lambda
 
   # Perform cross validation to get a good estimate for the hyperparameter performance
-  cvResult = crossvalidate(k = 5, trainSet) do trainFold, valFold
+  cvResult = crossvalidate(trainSet, k = 5) do trainFold, valFold
 
     # Specify the model and model-specific parameters
     model = Classifier.LogisticRegression(l2_coef = lambda)
@@ -77,7 +80,7 @@ gsResult = gridsearch([.001, .01, .1], [.0001, .0003]) do lr, lambda
     solver = Solver.NaiveGradientDescent(learning_rate = lr, normalize_gradient = false)
 
     # train! mutates the model state
-    train!(model, trainFold, solver=solver, max_iter = 1000)
+    train!(model, trainFold, solver, max_iter = 1000)
 
     # make sure to return the trained model
     model
