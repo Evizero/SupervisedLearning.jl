@@ -77,7 +77,7 @@ gsResult = gridsearch([.001, .01, .1], [.0001, .0003]) do lr, lambda
     solver = Solver.NaiveGradientDescent(learning_rate = lr, normalize_gradient = false)
 
     # train! mutates the model state
-    train!(model, trainFold, solver=solver, max_iter = 1000)
+    train!(model, trainFold, solver, max_iter = 1000)
 
     # make sure to return the trained model
     model
