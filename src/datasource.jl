@@ -5,7 +5,9 @@ export dataSource, encodeDataSource
 
 using ArrayViews
 using DataFrames
+
 import StatsBase.nobs
+import Base.shuffle!
 
 macro _not_implemented()
   quote
@@ -88,17 +90,45 @@ nclasses{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N}) = nc
 labels{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N}) = labels(source.encoding)
 classDistribution{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N}) = classDistribution(source.encoding, labeldecode(source.encoding, source.targets))
 
+function shuffle!(X::Array{Float64,2}, t::Array{Float64,1})
+  rows = size(X, 1)
+  cols = size(X, 2)
+  for c = 1:cols
+    i = rand(c:cols)
+    for r = 1:rows
+      @inbounds X[r,c], X[r,i] = X[r,i], X[r,c]
+    end
+    @inbounds t[c], t[i] = t[i], t[c]
+  end
+  nothing
+end
+
+function shuffle!(X::Array{Float64,2}, t::Array{Float64,2})
+  rows = size(X, 1)
+  cols = size(X, 2)
+  rowsT = size(t, 1)
+  for c = 1:cols
+    i = rand(c:cols)
+    for r = 1:rows
+      @inbounds X[r,c], X[r,i] = X[r,i], X[r,c]
+    end
+    for r = 1:rowsT
+      @inbounds t[r,c], t[r,i] = t[r,i], t[r,c]
+    end
+  end
+  nothing
+end
+
 function splitTrainTest!{E<:ClassEncoding,N}(source::EncodedInMemoryLabeledDataSource{E,N};
                                              p_train::FloatingPoint = .7)
-  @assert p_train < 1.
-  @assert p_train > 0.
+  @assert p_train < 1. && p_train > 0.
   X = source.features
   t = source.targets
+  shuffle!(X, t)
   ce = source.encoding
   bias = source.bias
   n = nobs(source)
   sn = safeFloor(n * p_train)
-  shuffleCols!(X)
   if N == 1
     trainData = dataSource(view(X, :, 1:sn), view(t, 1:sn), ce, bias = bias)
     testData = dataSource(view(X, :, (sn+1):n), view(t, (sn+1):n), ce, bias = bias)

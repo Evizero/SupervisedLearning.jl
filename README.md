@@ -48,7 +48,8 @@ using RDatasets
 data = dataset("datasets", "mtcars")
 
 # In this case the dataset will be in-memory.
-# Specifying the encoding is not necessary. The model will select the encoding it needs automatically
+# Specifying the encoding is not necessary.
+# The model will select the encoding it needs automatically
 problemSet = dataSource(AM ~ DRat + WT, data)
 
 # Methods for splitting the abstract data sets
