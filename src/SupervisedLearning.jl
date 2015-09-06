@@ -9,6 +9,7 @@ include("common.jl")
 include("classencoding.jl")
 include("datasource.jl")
 include("solver.jl")
+include("supervisedmodel.jl")
 include("empiricalrisks.jl")
 
 end # module

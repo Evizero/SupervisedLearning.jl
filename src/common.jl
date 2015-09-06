@@ -18,3 +18,9 @@ function safeFloor(num)
     floor(Integer, num)
   end
 end
+
+macro _not_implemented()
+  quote
+    throw(ArgumentError("Not implemented for the given type"))
+  end
+end

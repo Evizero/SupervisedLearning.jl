@@ -9,12 +9,6 @@ using DataFrames
 import StatsBase.nobs
 import Base.shuffle!
 
-macro _not_implemented()
-  quote
-    throw(ArgumentError("Not implemented for the given datasource type"))
-  end
-end
-
 # ==========================================================================
 
 abstract DataSource

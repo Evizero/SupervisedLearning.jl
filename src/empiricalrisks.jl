@@ -1,8 +1,7 @@
 export Classifier
 export LogReg
-export trainingCurve
 
-using EmpiricalRisks
+import EmpiricalRisks
 using Regression
 
 # ==========================================================================
@@ -27,7 +26,7 @@ end
 
 function EmpiricalRiskLearner{L<:Loss}(lossfunction::L, regularizer::Regularizer)
   EmpiricalRiskLearner{L}(lossfunction, regularizer,
-                          :untrained, [.0], .0, 0, nothing, Dict())
+                          :untrained, [.0], typemax(Float64), 0, nothing, Dict())
 end
 
 # --------------------------------------------------------------------------
@@ -50,8 +49,13 @@ typealias LogReg Classifier.LogisticRegression
 
 
 # ==========================================================================
+# Implement the interface
 
 using SupervisedLearning.Classifier
+
+iterations(model::EmpiricalRiskLearner) = model._iterations
+state(model::EmpiricalRiskLearner) = model.state
+cost(model::EmpiricalRiskLearner) = model._cost
 
 function trainingCurve(model::EmpiricalRiskLearner)
   if(!haskey(model._history, "cost"))
@@ -63,25 +67,24 @@ function trainingCurve(model::EmpiricalRiskLearner)
   (iterations, costValues)
 end
 
-function trainingCurve(model::LogReg)
-  trainingCurve(model._risk_learner)
-end
+# --------------------------------------------------------------------------
+
+iterations(model::LogReg) = model._risk_learner == nothing ? 0 : iterations(model._risk_learner)
+state(model::LogReg) = model._risk_learner == nothing ? :untrained : state(model._risk_learner)
+cost(model::LogReg) = model._risk_learner == nothing ? typemax(Float64) : cost(model._risk_learner)
+trainingCurve(model::LogReg) = trainingCurve(model._risk_learner)
 
 # ==========================================================================
+# Implement the train! functions
 
 function setModelInternals!{L<:Loss}(model::EmpiricalRiskLearner{L}, data::InMemoryLabeledDataSource, theta, iter, cost)
   model._coefficients = theta
   model._history["coefficients"][iter] = theta
-  tCost = mean(value(model._native_model, theta, features(data), targets(data)))
-  model._cost = tCost
-  model._history["cost"][iter] = tCost
+  #tCost = mean(value(model._native_model, theta))
+  model._cost = cost
+  model._history["cost"][iter] = cost
   model._iterations = iter
 end
-
-function setModelInternals!{L<:Loss}(model::EmpiricalRiskLearner{L}, theta)
-  model._coefficients = theta
-end
-
 
 function logRegCallback{L<:Loss}(model::EmpiricalRiskLearner{L}, data::InMemoryLabeledDataSource, userCallback, breakEvery; tell_user = true)
   function callback(iter, theta, cost, grad)
@@ -99,15 +102,17 @@ function train!{E<:SignedClassEncoding, L<:UnivariateLoss}(
     model::EmpiricalRiskLearner{L},
     data::EncodedInMemoryLabeledDataSource{E,1},
     solver::Solver.GradientDescent;
-    max_iter = 1000,
-    break_every = 10,
+    max_iter::Int = 1000,
+    break_every::Int = -1,
     args...)
+  @assert max_iter > 0
+  break_every = break_every > 0 ? break_every : safeFloor(max_iter / 10)
   X = features(data)
   t = targets(data)
   b = bias(data)
   m = nobs(data)
   n = nvar(data)
-  rmodel = if(b == 0.0)
+  rmodel = if b == 0.0
     riskmodel(LinearPred(n), model.lossfunction)
   else
     riskmodel(AffinePred(n, b), model.lossfunction)
@@ -116,7 +121,7 @@ function train!{E<:SignedClassEncoding, L<:UnivariateLoss}(
 
   # Reset training _history
   model.state = :training
-  model._native_model = rmodel
+  model._native_model = f
   model._history = Dict{String,Dict{Int,Any}}()
   model._history["cost"] = Dict{Int,Float64}()
   model._history["coefficients"] = Dict{Int,Array}()
@@ -126,15 +131,15 @@ function train!{E<:SignedClassEncoding, L<:UnivariateLoss}(
   cb = logRegCallback(model, data, callback, break_every, tell_user = true)
 
   # inital theta
-  theta = typeof(rmodel.predmodel) == LinearPred ? randn(n) : randn(n+1)
+  theta = typeof(rmodel.predmodel) == LinearPred ? zeros(n) : zeros(n+1)
 
   # Fit model
-  Regression.solve!(GD(), f, theta,
-                    Regression.Options(maxiter = max_iter),
-                    cb)
+  r = Regression.solve!(Regression.GD(), f, theta,
+                        Regression.Options(maxiter = max_iter),
+                        cb)
 
   model.state = :trained
-  setModelInternals!(model, theta)
+  setModelInternals!(model, data, r.sol, r.niters, r.fval)
   model
 end
 
