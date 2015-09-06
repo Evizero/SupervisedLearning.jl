@@ -45,10 +45,10 @@ msg("LabeledDataSource: constructors")
 X = [1. 2. 3.;
      4. 5. 6.]
 t = [1., 2., 3.]
-tn = [1. 2. 3.;
-      4. 5. 6.;
-      7. 8. 9.;
-      1. 2. 3.]
+tn = [1. 0. 0.;
+      0. 0. 1.;
+      0. 1. 0.;
+      0. 0. 0.]
 
 ce = MultivalueClassEncoding(["V1","V2","V3"])
 ds = EncodedInMemoryLabeledDataSource(X, t, ce)
@@ -58,6 +58,8 @@ ds = EncodedInMemoryLabeledDataSource(X, t, ce)
 @test features(ds) == X
 @test features(ds, 1, 1) == [1. 4.]'
 @test features(ds, 2, 2) == [2. 3.; 5. 6.]
+@test groundtruth(ds) == ["V1","V2","V3"]
+@test targets(ds) == t
 @test targets(ds, 1, 1) == [1.]
 @test targets(ds, 2, 2) == [2., 3]
 @test nclasses(ds) == 3
@@ -71,6 +73,8 @@ ds = dataSource(X, t, ce, bias=0.)
 @test features(ds) == X
 @test features(ds, 1, 1) == [1. 4.]'
 @test features(ds, 2, 2) == [2. 3.; 5. 6.]
+@test groundtruth(ds) == ["V1","V2","V3"]
+@test targets(ds) == t
 @test targets(ds, 1, 1) == [1.]
 @test targets(ds, 2, 2) == [2., 3]
 @test nclasses(ds) == 3
@@ -84,9 +88,10 @@ ds = EncodedInMemoryLabeledDataSource(X, tn, ce, .3)
 @test features(ds) == X
 @test features(ds, 1, 1) == [1. 4.]'
 @test features(ds, 2, 2) == [2. 3.; 5. 6.]
+@test groundtruth(ds) == ["V1","V3","V2"]
 @test targets(ds) == tn
-@test targets(ds, 1, 1) == [1. 4. 7. 1.]'
-@test targets(ds, 2, 2) == [2. 3.; 5. 6.; 8. 9.; 2. 3.]
+@test targets(ds, 1, 1) == [1. 0. 0. 0.]'
+@test targets(ds, 2, 2) == [0. 0.; 0. 1.; 1. 0.; 0. 0.]
 @test nclasses(ds) == 4
 @test labels(ds) == ["V1","V2","V3","V4"]
 
@@ -98,9 +103,10 @@ ds = dataSource(X, tn, ce, bias=0.)
 @test features(ds) == X
 @test features(ds, 1, 1) == [1. 4.]'
 @test features(ds, 2, 2) == [2. 3.; 5. 6.]
+@test groundtruth(ds) == ["V1","V3","V2"]
 @test targets(ds) == tn
-@test targets(ds, 1, 1) == [1. 4. 7. 1.]'
-@test targets(ds, 2, 2) == [2. 3.; 5. 6.; 8. 9.; 2. 3.]
+@test targets(ds, 1, 1) == [1. 0. 0. 0.]'
+@test targets(ds, 2, 2) == [0. 0.; 0. 1.; 1. 0.; 0. 0.]
 @test nclasses(ds) == 4
 @test labels(ds) == ["V1","V2","V3","V4"]
 
