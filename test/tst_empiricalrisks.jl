@@ -12,11 +12,11 @@ t = sign(X'w[1:d] + w[d+1] + 0.2 * randn(n))
 
 data = dataSource(X, t, SignedClassEncoding(["no","yes"]))
 
-models = [Classifier.LogisticRegression(), 
-          Classifier.LogisticRegression(l1_coef = .1), 
-          Classifier.LogisticRegression(l2_coef = .1)]
+models = [("without Regularization", Classifier.LogisticRegression()), 
+          ("with L1 penalty", Classifier.LogisticRegression(l1_coef = .1)), 
+          ("with L2 penalty", Classifier.LogisticRegression(l2_coef = .1))]
 
-for model in models
+for (desc, model) in models
   solver = Solver.GradientDescent()
 
   @test state(model) == :untrained
@@ -35,7 +35,7 @@ for model in models
   @test_approx_eq cost(model, data) -fitness(model, data)
   @test_approx_eq cost(model) cost(model, data)
 
-  print(lineplot(trainingCurve(model)..., title = "Gradient Descent"))
+  print(lineplot(trainingCurve(model)..., title = "LogReg with Gradient Descent $desc"))
 
   y = predict(model, data)
   @test sum(y .== groundtruth(data)) > .8 * n

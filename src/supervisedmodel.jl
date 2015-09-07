@@ -9,7 +9,7 @@ end
 # Interface for all models
 
 iterations(model::Any) = @_not_implemented
-state(model::Any) = @_not_implemented
+state(model::Any) = @_not_implemented # :untrained, :training, :trained
 trainingCurve(model::Any) = @_not_implemented
 cost(model::Any) = @_not_implemented
 cost(model::Any, data::DataSource) = @_not_implemented
