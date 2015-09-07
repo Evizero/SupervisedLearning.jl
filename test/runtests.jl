@@ -19,6 +19,7 @@ tests = [
   "tst_datasource.jl"
   "tst_integration.jl"
   "tst_empiricalrisks.jl"
+  "tst_traininghistory.jl"
 ]
 
 perf = [

@@ -8,6 +8,7 @@ using Reexport
 include("common.jl")
 include("classencoding.jl")
 include("datasource.jl")
+include("traininghistory.jl")
 include("solver.jl")
 include("supervisedmodel.jl")
 include("empiricalrisks.jl")
