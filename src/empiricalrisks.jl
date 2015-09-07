@@ -23,8 +23,9 @@ type EmpiricalRiskLearner{L<:Loss}
   _native_model::Any
 end
 
-function EmpiricalRiskLearner{L<:Loss}(lossfunction::L, regularizer::Regularizer)
-  EmpiricalRiskLearner{L}(lossfunction, regularizer, [.0], typemax(Float64), nothing)
+function EmpiricalRiskLearner{L<:Loss}(lossfunction::L, regularizer::Regularizer; box=true)
+  model = EmpiricalRiskLearner{L}(lossfunction, regularizer, [.0], typemax(Float64), nothing)
+  box ? SupervisedModel(model) : model
 end
 
 # --------------------------------------------------------------------------
@@ -96,9 +97,10 @@ function train!{E<:SignedClassEncoding, L<:UnivariateLoss, G<:Any}(
     callback::Function,
     model::EmpiricalRiskLearner{L},
     data::EncodedInMemoryLabeledDataSource{E,G,1},
-    solver::Solver.GradientDescent;
+    solver::Solver.GradientDescent,
+    args...;
     max_iter::Int = 1000,
-    args...)
+    nargs...)
   @assert max_iter > 0
   X = features(data)
   t = targets(data)
@@ -132,35 +134,36 @@ function train!{E<:SignedClassEncoding, L<:UnivariateLoss, G<:Any}(
 
   # Fit model
   r = Regression.solve!(Regression.GD(), f, theta,
-                        Regression.Options(maxiter = max_iter),
+                        Regression.Options(maxiter = max_iter, nargs...),
                         cb)
 
   model._coefficients = r.sol
   model._cost = r.fval
-  model
+  r.niters
 end
 
 function train!{E<:ClassEncoding, G<:Any}(
     callback::Function,
     model::LogisticRegression,
     data::EncodedInMemoryLabeledDataSource{E,G,1},
-    solver::Solver.GradientDescent;
-    args...)
+    solver::Solver.GradientDescent,
+    args...;
+    nargs...)
   if model.l1_coef == model.l2_coef == 0.
     # No reg
-    newModel = EmpiricalRiskLearner(LogisticLoss(), EmpiricalRisks.ZeroReg())
+    newModel = EmpiricalRiskLearner(LogisticLoss(), EmpiricalRisks.ZeroReg(), box=false)
     model._risk_learner = newModel
-    train!(callback, newModel, data, solver; args...)
+    train!(callback, newModel, data, solver, args...; nargs...)
   elseif model.l1_coef == 0. && model.l2_coef != 0.
     # Only l2 reg
-    newModel = EmpiricalRiskLearner(LogisticLoss(), EmpiricalRisks.SqrL2Reg(model.l2_coef))
+    newModel = EmpiricalRiskLearner(LogisticLoss(), EmpiricalRisks.SqrL2Reg(model.l2_coef), box=false)
     model._risk_learner = newModel
-    train!(callback, newModel, data, solver; args...)
+    train!(callback, newModel, data, solver, args...; nargs...)
   elseif model.l1_coef != 0. && model.l2_coef == 0.
     # Only l1 reg
-    newModel = EmpiricalRiskLearner(LogisticLoss(), EmpiricalRisks.L1Reg(model.l1_coef))
+    newModel = EmpiricalRiskLearner(LogisticLoss(), EmpiricalRisks.L1Reg(model.l1_coef), box=false)
     model._risk_learner = newModel
-    train!(callback, newModel, data, solver; args...)
+    train!(callback, newModel, data, solver, args...; nargs...)
   else
     throw(ArgumentError("Hyperparameter of LogisticRegression have an illegal combination"))
   end

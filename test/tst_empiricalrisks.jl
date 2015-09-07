@@ -16,8 +16,9 @@ models = [("without Regularization", Classifier.LogisticRegression()),
           ("with L1 penalty", Classifier.LogisticRegression(l1_coef = .1)), 
           ("with L2 penalty", Classifier.LogisticRegression(l2_coef = .1))]
 
-for (desc, model) in models
-  solver = Solver.GradientDescent()
+solvers = [Solver.GradientDescent()]
+
+for solver in solvers, (desc, model) in models
 
   @test state(model) == :untrained
   @test iterations(model) == 0
@@ -36,7 +37,7 @@ for (desc, model) in models
   @test_approx_eq cost(model) cost(model, data)
 
   x, y = trainingCurve(model)
-  plt = lineplot(x, y, ylim=[round(minimum(y)), round(maximum(y))], width = 30, height = 2)
+  plt = lineplot(x, y, ylim=[floor(minimum(y)), ceil(maximum(y))], width = 30, height = 2)
   annotate!(plt, :r, 1, "$(name(model))")
   annotate!(plt, :r, 2, "$(typeof(solver)) $desc")
   annotate!(plt, :bl, ""); annotate!(plt, :br, "")

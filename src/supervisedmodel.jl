@@ -105,16 +105,23 @@ function train!{T<:Any, D<:LabeledDataSource}(
   break_every = break_every < 0 ? safeFloor(max_iter / 10) : break_every
   enable_callback = break_every > 0
 
+  # Define callback for the native model
   function localCallback()
     model._iterations += 1
     if model._iterations % break_every == 0
-      @remember!(model, cost(model))
+      @remember!(model, cost(model)) # This should always be cheap
       userCallback()
     end
   end
 
+  # If callback is disabled only pass the empty function
+  cb = enable_callback ? localCallback : defaultCallback
+
+  # Train native model
   model._state = :training
-  train!(localCallback, model._native, data, solver, args...; max_iter=max_iter, nargs...)
+  itersOld = model._iterations
+  itersNew = train!(cb, model._native, data, solver, args...; max_iter=max_iter, nargs...)
+  model._iterations = itersOld + itersNew
   model._state = :trained
   model
 end
