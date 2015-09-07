@@ -1,6 +1,8 @@
-import StatsBase.predict
+export SupervisedModel
+export iterations, cost, fitness, predict, predictProb, accuracy
+export state, remember!, @remember!, history, trainingCurve, name
 
-export iterations, state, trainingCurve, cost, fitness, predict, predictProb, accuracy
+import StatsBase.predict
 
 function defaultCallback()
 end
@@ -8,9 +10,6 @@ end
 # ==========================================================================
 # Interface for all models
 
-iterations(model::Any) = @_not_implemented
-state(model::Any) = @_not_implemented # :untrained, :training, :trained
-trainingCurve(model::Any) = @_not_implemented
 cost(model::Any) = @_not_implemented
 cost(model::Any, data::DataSource) = @_not_implemented
 fitness(model::Any) = -1 * cost(model)
@@ -30,25 +29,41 @@ train!(model::Any, data::DataSource, solver::AbstractSolver, args...; nargs...) 
 # Embedding supervised learning model for convenience
 
 type SupervisedModel{T<:Any}
-  _native::T
   _state::Symbol
+  _iterations::Int
+  _native::T
   _history::TrainingHistory{Int}
+end
+
+function SupervisedModel{T<:Any}(model::T)
+  SupervisedModel{T}(:untrained, zero(Int), model, TrainingHistory(Int))
 end
 
 # ==========================================================================
 # Macros for simpler function defintion
 
 macro _static_always(f, command, args...)
-  local vars = map(x->x.args[1], args)
   esc(:(($f{T<:Any})(model::SupervisedModel{T},$(args...)) = $command))
 end
 
-macro _delegate_trained_only(f, args...)
+macro _static_training_only(f, command, args...)
+  if length(args) > 0 && args[end].args[1] == :nargs
+    esc(:(($f{T<:Any})(model::SupervisedModel{T},$(args[1:end-1]...);nargs...) = model._state == :training ? $command : throw(ArgumentError("Function is only defined while the model is in training"))))
+  else
+    esc(:(($f{T<:Any})(model::SupervisedModel{T},$(args...)) = model._state == :training ? $command : throw(ArgumentError("Function is only defined while the model is in training"))))
+  end
+end
+
+macro _static_not_untrained_only(f, command, args...)
+  esc(:(($f{T<:Any})(model::SupervisedModel{T},$(args...)) = model._state == :untrained ? throw(ArgumentError("Function not defined for untrained models")) : $command))
+end
+
+macro _delegate_not_untrained_only(f, args...)
   local vars = map(x->x.args[1], args)
   esc(:(($f{T<:Any})(model::SupervisedModel{T},$(args...)) = model._state == :untrained ? throw(ArgumentError("Function not defined for untrained models")) : $f(model._native,$(vars...))))
 end
 
-macro _delegate_trained_else(f, alternative, args...)
+macro _delegate_not_untrained_else(f, alternative, args...)
   local vars = map(x->x.args[1], args)
   esc(:(($f{T<:Any})(model::SupervisedModel{T},$(args...)) = model._state == :untrained ? $alternative : $f(model._native,$(vars...))))
 end
@@ -56,14 +71,50 @@ end
 # ==========================================================================
 # Define the local and delegating functions
 
-@_static_always(state, model._state)
+@_static_always(name, string(typeof(model._native)))
+@_static_always(state, model._state) # :untrained, :training, :trained
+@_static_always(iterations, model._iterations)
+@_static_training_only(remember!, push!(model._history, model._iterations, f, args...; nargs...), f::Function, args..., nargs...)
+@_static_not_untrained_only(history, get(model._history, f), f::Function)
+@_static_not_untrained_only(trainingCurve, get(model._history, cost))
+@_delegate_not_untrained_only(cost)
+@_delegate_not_untrained_only(cost, data::DataSource)
+@_delegate_not_untrained_only(fitness)
+@_delegate_not_untrained_only(fitness, data::DataSource)
+@_delegate_not_untrained_only(predict, data::DataSource)
+@_delegate_not_untrained_only(predictProb, data::DataSource)
+@_delegate_not_untrained_only(accuracy, data::DataSource)
 
-@_delegate_trained_else(iterations, 0)
+macro remember!(model, func)
+  esc(:(remember!($model, $(func.args...))))
+end
 
-@_delegate_trained_only(cost)
-@_delegate_trained_only(cost, data::DataSource)
-@_delegate_trained_only(fitness)
-@_delegate_trained_only(fitness, data::DataSource)
-@_delegate_trained_only(predict, data::DataSource)
-@_delegate_trained_only(predictProb, data::DataSource)
-@_delegate_trained_only(accuracy, data::DataSource)
+# ==========================================================================
+# Train method
+
+function train!{T<:Any, D<:LabeledDataSource}(
+    userCallback::Function,
+    model::SupervisedModel{T},
+    data::D,
+    solver::AbstractSolver,
+    args...;
+    max_iter::Int = 1000,
+    break_every::Int = -1, # -1 ... automatic, 0 ... off
+    nargs...)
+  @assert max_iter > 0
+  break_every = break_every < 0 ? safeFloor(max_iter / 10) : break_every
+  enable_callback = break_every > 0
+
+  function localCallback()
+    model._iterations += 1
+    if model._iterations % break_every == 0
+      @remember!(model, cost(model))
+      userCallback()
+    end
+  end
+
+  model._state = :training
+  train!(localCallback, model._native, data, solver, args...; max_iter=max_iter, nargs...)
+  model._state = :trained
+  model
+end

@@ -35,7 +35,12 @@ for (desc, model) in models
   @test_approx_eq cost(model, data) -fitness(model, data)
   @test_approx_eq cost(model) cost(model, data)
 
-  print(lineplot(trainingCurve(model)..., title = "LogReg with Gradient Descent $desc"))
+  x, y = trainingCurve(model)
+  plt = lineplot(x, y, ylim=[round(minimum(y)), round(maximum(y))], width = 30, height = 2)
+  annotate!(plt, :r, 1, "$(name(model))")
+  annotate!(plt, :r, 2, "$(typeof(solver)) $desc")
+  annotate!(plt, :bl, ""); annotate!(plt, :br, "")
+  print(plt)
 
   y = predict(model, data)
   @test sum(y .== groundtruth(data)) > .8 * n
