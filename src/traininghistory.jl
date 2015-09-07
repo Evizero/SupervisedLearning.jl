@@ -7,12 +7,18 @@ import Base: length, push!, get
 
 # ==========================================================================
 
+if VERSION < v"0.4-"
+  typealias TupleType{T} (T, Any)
+else
+  typealias TupleType{T} Tuple{T, Any}
+end
+
 type TrainingHistory{T<:Integer}
-  _storage::Dict{Function, Queue{Deque{(T, Any)}}}
+  _storage::Dict{Function, Queue{Deque{TupleType{T}}}}
 end
 
 function TrainingHistory{T<:Integer}(::Type{T} = Int64)
-  TrainingHistory(Dict{Function, Queue{Deque{(T, Any)}}}())
+  TrainingHistory(Dict{Function, Queue{Deque{TupleType{T}}}}())
 end
 
 # ==========================================================================
@@ -30,7 +36,7 @@ function push!{T<:Integer}(history::TrainingHistory{T},
   lastiter = zero(T)
   if !haskey(history._storage, f)
     iteration >= lastiter || throw(ArgumentError("Iterations must not decrease over time"))
-    history._storage[f] = Queue((T, Any))
+    history._storage[f] = Queue(TupleType{T})
   else
     lastiter, _ = back(history._storage[f])
     iteration >= lastiter || throw(ArgumentError("Iterations must not decrease over time"))

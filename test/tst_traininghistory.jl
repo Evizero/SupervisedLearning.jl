@@ -57,8 +57,8 @@ msg("TrainingHistory: Storing arbitrary types")
 history = TrainingHistory(Uint8)
 
 for i = 1:100
-  @test push!(history, uint8(i), string, "i=", i + 1) == string("i=", i+1)
-  @test push!(history, uint8(i), float, i + 1) == float(i+1)
+  @test push!(history, i % Uint8, string, "i=", i + 1) == string("i=", i+1)
+  @test push!(history, i % Uint8, float, i + 1) == float(i+1)
 end
 
 a1, a2 = get(history, string)
