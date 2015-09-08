@@ -88,7 +88,7 @@ cost(model::LogReg) = cost(model._risk_learner)
 cost(model::LogReg, data::DataSource) = cost(model._risk_learner, data)
 predict(model::LogReg, data::DataSource) = predict(model._risk_learner, data)
 predictProb(model::LogReg, data::DataSource) = predictProb(model._risk_learner, data)
-accuracy(model::Any, data::DataSource) = accuracy(model._risk_learner, data)
+accuracy(model::LogReg, data::DataSource) = accuracy(model._risk_learner, data)
 
 # ==========================================================================
 # Implement the train! functions

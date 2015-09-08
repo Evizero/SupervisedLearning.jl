@@ -47,7 +47,7 @@ immutable EncodedInMemoryLabeledDataSource{E<:ClassEncoding,G<:Any,N} <: InMemor
                                             encoding::E,
                                             bias::Float64)
     typeof(encoding) <: OneOfKClassEncoding && throw(ArgumentError("Can't have OneOutOfK-Encoding with a vector as target"))
-    size(features,2) == length(targets) || throw(DimensionMismatch("Features and targets have to have the same number of observations"))
+    size(features, 2) == length(targets) || throw(DimensionMismatch("Features and targets have to have the same number of observations"))
     new(features, targets, groundtruth, encoding, bias)
   end
 
@@ -56,8 +56,8 @@ immutable EncodedInMemoryLabeledDataSource{E<:ClassEncoding,G<:Any,N} <: InMemor
                                             groundtruth::AbstractArray{G,1},
                                             encoding::OneOfKClassEncoding,
                                             bias::Float64)
-    nclasses(encoding) == size(targets,1) || throw(DimensionMismatch("Targets have to have the same number of rows as the encoding has labels"))
-    size(features,2) == size(targets,2) || throw(DimensionMismatch("Features and targets have to have the same number of observations"))
+    nclasses(encoding) == size(targets, 1) || throw(DimensionMismatch("Targets have to have the same number of rows as the encoding has labels"))
+    size(features, 2) == size(targets, 2) || throw(DimensionMismatch("Features and targets have to have the same number of observations"))
     new(features, targets, groundtruth, encoding, bias)
   end
 end
@@ -77,7 +77,7 @@ function EncodedInMemoryLabeledDataSource{E<:ClassEncoding}(
     encoding::E,
     bias::Float64 = 1.)
   typeof(encoding) <: OneOfKClassEncoding && throw(ArgumentError("Can't have OneOutOfK-Encoding with a vector as target"))
-  size(features,2) == length(targets) || throw(DimensionMismatch("Features and targets have to have the same number of observations"))
+  size(features, 2) == length(targets) || throw(DimensionMismatch("Features and targets have to have the same number of observations"))
   EncodedInMemoryLabeledDataSource(features, targets, labeldecode(encoding, targets), encoding, bias)
 end
 
@@ -95,8 +95,8 @@ function EncodedInMemoryLabeledDataSource(
     targets::AbstractArray{Float64,2},
     encoding::OneOfKClassEncoding,
     bias::Float64 = 1.)
-  nclasses(encoding) == size(targets,1) || throw(DimensionMismatch("Targets have to have the same number of rows as the encoding has labels"))
-  size(features,2) == size(targets,2) || throw(DimensionMismatch("Features and targets have to have the same number of observations"))
+  nclasses(encoding) == size(targets, 1) || throw(DimensionMismatch("Targets have to have the same number of rows as the encoding has labels"))
+  size(features, 2) == size(targets, 2) || throw(DimensionMismatch("Features and targets have to have the same number of observations"))
   EncodedInMemoryLabeledDataSource(features, targets, labeldecode(encoding, targets), encoding, bias)
 end
 
@@ -119,10 +119,10 @@ targets{E<:ClassEncoding,G,N}(source::EncodedInMemoryLabeledDataSource{E,G,N}) =
   source.targets
 
 targets{E<:ClassEncoding,G}(source::EncodedInMemoryLabeledDataSource{E,G,1}, offset::Int, length::Int) =
-  view(source.targets, offset:(offset+length-1))
+  view(source.targets, offset:(offset + length - 1))
 
 targets{E<:ClassEncoding,G}(source::EncodedInMemoryLabeledDataSource{E,G,2}, offset::Int, length::Int) =
-  view(source.targets, :, offset:(offset+length-1)
+  view(source.targets, :, offset:(offset + length - 1)
        )
 bias{E<:ClassEncoding,G,N}(source::EncodedInMemoryLabeledDataSource{E,G,N}) =
   source.bias
@@ -216,7 +216,7 @@ end
 function encodeDataSource{E<:ClassEncoding}(source::DataFrameLabeledDataSource, ::Type{E})
   mf = ModelFrame(source.formula, source.dataFrame)
   mm = ModelMatrix(mf)
-  dfBias = in(0,mm.assign)
+  dfBias = in(0, mm.assign)
   X = dfBias ? mm.m[:,2:end]: mm.m
   extBias = dfBias * 1.0
   t = convert(Vector{Float64}, model_response(mf))

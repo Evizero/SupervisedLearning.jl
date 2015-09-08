@@ -34,7 +34,7 @@ function push!{T<:Integer,V<:Any}(history::TrainingHistory{T},
                                   value::V)
   lastiter = zero(T)
   if !haskey(history._storage, key)
-    iteration >= lastiter || throw(ArgumentError("Iterations must not decrease over time"))
+    iteration >= lastiter || throw(ArgumentError("Iterations must be greater than or equal to 0"))
     history._storage[key] = Queue(TupleType{T,V})
   else
     lastiter, _ = back(history._storage[key])
@@ -61,6 +61,9 @@ function get{T<:Integer}(history::TrainingHistory{T}, key::Symbol)
   end
   karray, varray
 end
+
+# ==========================================================================
+# Convenience macros
 
 macro push!(history, iteration, func)
   key = string(func)
