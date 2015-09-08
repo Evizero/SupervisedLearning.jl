@@ -12,7 +12,7 @@ The goal of this library is manyfold:
 
 ## Planned High-level API
 
-The following code should allready work
+The following code should already work
 
 ```Julia
 using SupervisedLearning
