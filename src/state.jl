@@ -23,14 +23,9 @@ end
 immutable State
   _idx::Int
   _symb::Symbol
-end
 
-function State(idx::Int)
-  State(idx, STATES[idx])
-end
-
-function State(symb::Symbol)
-  State(STATES_LOOKUP[symb], symb)
+  State(idx::Int) = new(idx, STATES[idx])
+  State(symb::Symbol) = new(STATES_LOOKUP[symb], symb)
 end
 
 Base.show(io::IO, state::State) = print(io, state._idx, ": ", state._symb)
