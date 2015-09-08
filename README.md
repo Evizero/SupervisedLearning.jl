@@ -12,45 +12,66 @@ The goal of this library is manyfold:
 
 ## Planned High-level API
 
-this is just a rough draft and object to change
+The following code should allready work
 
 ```Julia
 using SupervisedLearning
 using RDatasets
+using UnicodePlots
 
 data = dataset("datasets", "mtcars")
 
 # In this case the dataset will be in-memory and encoded to -1, 1
 # There will also be support for datastreaming from HDF5
-problemSet = dataSource(AM ~ DRat + WT, data, SignedClassEncoding)
+problemSet = dataSource(AM ~ DRat + WT + DRat&WT, data, SignedClassEncoding)
 
 # Convenient to use with UnicodePlots
 print(barplot(classDistribution(problemSet)...))
 
 # Methods for splitting the abstract data sets
-trainSet, testSet = splitTrainTest(problemSet, p_train = .75)
+trainSet, testSet = splitTrainTest!(problemSet, p_train = .75)
 
 # Specifies the model and modelspecific parameter
-model = Classifier.LogisticRegression(l2_coef=0.001)
+model = Classifier.LogisticRegression(l2_coef=0.1)
 
-# Backend for neural networks will be Mocha.jl
+# Backend for neural networks will be Mocha.jl or OnlineAI.jl
 # model = Classifier.FeedForwardNeuralNetwork([4,5,7],[ReLu,ReLu,ReLu])
 
 # train! mutates the model state
 #  * the do-block is the callback function which also allows for early stopping
-#  * In this case L_BFGS() will result in using Optim.jl with :l_bfgs as backend
+#  * In the regression case Solver.GradientDescent() will result in using Regression.jl, 
+#    otherwise (in most deterministic cases) Optim.jl
 #  * There will also be stochastic gradient descent with minibatches
-train!(model, trainSet, solver = Solver.L_BFGS(), max_iter = 1000, break_every = 100) do
-  x,y = trainingCurve(model)
-  # integrated with UnicodePlots.jl for working in the REPL
-  print(lineplot(x, y))
+train!(model, trainSet, Solver.GradientDescent(), max_iter = 10000, break_every = 100) do
+
+  # You can easily store custom learning curves or other arbitrary values
+  # They will be linked to the associated iteration automatically
+  remember!(model, :testsetLoss, cost(model, testSet))
+  
+  # You can also use the callback to execute any code
+  # For example to print informative messages
   println("Testset accuracy: ", accuracy(model, testSet))
 end
 
-ŷ = predict(model, testSet)
+# The loss of the training set is stored by default and can be accessed with trainingCurve
+# x is a Vector{Int} of iterations with stepsize break_every,
+# y is a Vector{Float64} where y[i] is the trainSet cost at x[i]
+x, y = trainingCurve(model)
+print(lineplot(x, y, title = "Learning curve for trainSet"))
+
+# Customly stored curves can be accessed with "history"
+# x is a Vector{Int} of iterations (exact values depend on when you called remember!),
+# y is a Vector{Float64} where y[i] is the trainSet cost at x[i]
+x, y = history(model, :testsetLoss)
+print(lineplot(x, y, title = "Learning curve for testSet"))
+
+ŷ = predict(model, testSet) # what the model says
+t = groundtruth(testSet) # what it should be
 ```
 
 ## Planned Mid-level API
+
+This is just a rough draft and still object to change
 
 ```Julia
 using SupervisedLearning
@@ -65,7 +86,7 @@ data = dataset("datasets", "mtcars")
 problemSet = dataSource(AM ~ DRat + WT, data)
 
 # Methods for splitting the abstract data sets
-trainSet, testSet = splitTrainTest(problemSet, p_train = .75)
+trainSet, testSet = splitTrainTest!(problemSet, p_train = .75)
 
 # Perform a gridsearch over an arbitrary modelspace
 gsResult = gridsearch([.001, .01, .1], [.0001, .0003]) do lr, lambda
@@ -91,9 +112,9 @@ gsResult = gridsearch([.001, .01, .1], [.0001, .0003]) do lr, lambda
 end
 
 # Plot the final accuracy of all trained models using UnicodePlots
-print(barplot(accuracy(result, testSet)...))
+print(barplot(accuracy(gsResult, testSet)...))
 
 # Get the best model
-bestModel = result.bestModel
+bestModel = gsResult.bestModel
 ŷ = predict(bestModel, testSet)
 ```
