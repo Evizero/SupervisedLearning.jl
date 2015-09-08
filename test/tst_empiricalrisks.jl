@@ -4,13 +4,14 @@ using UnicodePlots
 import EmpiricalRisks
 import Regression
 
-d = 3
+d = 5
 n = 1000
 w = randn(d+1)
 X = randn(d, n)
 t = sign(X'w[1:d] + w[d+1] + 0.2 * randn(n))
 
 data = dataSource(X, t, SignedClassEncoding(["no","yes"]))
+print(barplot(classDistribution(data)..., width = 30))
 
 models = [("without Regularization", Classifier.LogisticRegression()), 
           ("with L1 penalty", Classifier.LogisticRegression(l1_coef = .1)), 
@@ -20,13 +21,14 @@ solvers = [Solver.GradientDescent()]
 
 for solver in solvers, (desc, model) in models
 
-  @test state(model) == :untrained
+  @test state(model) == :uninitialized
   @test iterations(model) == 0
-  @test_throws ArgumentError trainingCurve(model)
+  @test_throws StateError trainingCurve(model)
+  @test_throws StateError cost(model)
 
   #train!(model, data, solver, max_iter = 50, break_every = 5)
   train!(model, data, solver, max_iter = 50, break_every = 5) do
-    state(model) == :training
+    @test state(model) == :training
     @test iterations(model) % 5 == 0
   end
 
@@ -38,7 +40,7 @@ for solver in solvers, (desc, model) in models
 
   x, y = trainingCurve(model)
   plt = lineplot(x, y, ylim=[floor(minimum(y)), ceil(maximum(y))], width = 30, height = 2)
-  annotate!(plt, :r, 1, "$(name(model))")
+  annotate!(plt, :r, 1, "$(name(model)) (accuracy: $(round(accuracy(model, data),2)))")
   annotate!(plt, :r, 2, "$(typeof(solver)) $desc")
   annotate!(plt, :bl, ""); annotate!(plt, :br, "")
   print(plt)

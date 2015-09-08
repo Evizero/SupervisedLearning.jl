@@ -1,6 +1,7 @@
 export SupervisedModel
 export iterations, cost, fitness, predict, predictProb, accuracy
-export state, remember!, @remember!, history, trainingCurve, name
+export stop!, state, remember!, history, trainingCurve, name
+export @remember!, @history
 
 import StatsBase.predict
 
@@ -29,14 +30,14 @@ train!(model::Any, data::DataSource, solver::AbstractSolver, args...; nargs...) 
 # Embedding supervised learning model for convenience
 
 type SupervisedModel{T<:Any}
-  _state::Symbol
+  _state::State
   _iterations::Int
   _native::T
   _history::TrainingHistory{Int}
 end
 
 function SupervisedModel{T<:Any}(model::T)
-  SupervisedModel{T}(:untrained, zero(Int), model, TrainingHistory(Int))
+  SupervisedModel{T}(:uninitialized, zero(Int), model, TrainingHistory(Int))
 end
 
 # ==========================================================================
@@ -47,25 +48,19 @@ macro _static_always(f, command, args...)
 end
 
 macro _static_training_only(f, command, args...)
-  if length(args) > 0 && args[end].args[1] == :nargs
-    esc(:(($f{T<:Any})(model::SupervisedModel{T},$(args[1:end-1]...);nargs...) = model._state == :training ? $command : throw(ArgumentError("Function is only defined while the model is in training"))))
-  else
-    esc(:(($f{T<:Any})(model::SupervisedModel{T},$(args...)) = model._state == :training ? $command : throw(ArgumentError("Function is only defined while the model is in training"))))
-  end
+  msg = string(f, " only defined during model training")
+  esc(:(($f{T<:Any})(model::SupervisedModel{T},$(args...)) = :training <= model._state <= :trystop ? $command : throw(StateError($msg))))
 end
 
-macro _static_not_untrained_only(f, command, args...)
-  esc(:(($f{T<:Any})(model::SupervisedModel{T},$(args...)) = model._state == :untrained ? throw(ArgumentError("Function not defined for untrained models")) : $command))
+macro _static_initialized_only(f, command, args...)
+  msg = string(f, " not defined for uninitialized or erroneous models")
+  esc(:(($f{T<:Any})(model::SupervisedModel{T},$(args...)) = model._state < :initialized ? throw(StateError($msg)) : $command))
 end
 
-macro _delegate_not_untrained_only(f, args...)
-  local vars = map(x->x.args[1], args)
-  esc(:(($f{T<:Any})(model::SupervisedModel{T},$(args...)) = model._state == :untrained ? throw(ArgumentError("Function not defined for untrained models")) : $f(model._native,$(vars...))))
-end
-
-macro _delegate_not_untrained_else(f, alternative, args...)
-  local vars = map(x->x.args[1], args)
-  esc(:(($f{T<:Any})(model::SupervisedModel{T},$(args...)) = model._state == :untrained ? $alternative : $f(model._native,$(vars...))))
+macro _delegate_initialized_only(f, args...)
+  vars = map(x->x.args[1], args)
+  msg = string(f, " not defined for uninitialized or erroneous models")
+  esc(:(($f{T<:Any})(model::SupervisedModel{T},$(args...)) = model._state < :initialized ? throw(StateError($msg)) : $f(model._native,$(vars...))))
 end
 
 # ==========================================================================
@@ -74,19 +69,26 @@ end
 @_static_always(name, string(typeof(model._native)))
 @_static_always(state, model._state) # :untrained, :training, :trained
 @_static_always(iterations, model._iterations)
-@_static_training_only(remember!, push!(model._history, model._iterations, f, args...; nargs...), f::Function, args..., nargs...)
-@_static_not_untrained_only(history, get(model._history, f), f::Function)
-@_static_not_untrained_only(trainingCurve, get(model._history, cost))
-@_delegate_not_untrained_only(cost)
-@_delegate_not_untrained_only(cost, data::DataSource)
-@_delegate_not_untrained_only(fitness)
-@_delegate_not_untrained_only(fitness, data::DataSource)
-@_delegate_not_untrained_only(predict, data::DataSource)
-@_delegate_not_untrained_only(predictProb, data::DataSource)
-@_delegate_not_untrained_only(accuracy, data::DataSource)
+@_static_training_only(stop!, model._state = :trystop)
+@_static_training_only(remember!, push!(model._history, model._iterations, key, value), key::Symbol, value)
+@_static_initialized_only(history, get(model._history, key), key::Symbol)
+@_static_initialized_only(trainingCurve, get(model._history, :trainingCurve))
+@_delegate_initialized_only(cost)
+@_delegate_initialized_only(cost, data::DataSource)
+@_delegate_initialized_only(fitness)
+@_delegate_initialized_only(fitness, data::DataSource)
+@_delegate_initialized_only(predict, data::DataSource)
+@_delegate_initialized_only(predictProb, data::DataSource)
+@_delegate_initialized_only(accuracy, data::DataSource)
 
 macro remember!(model, func)
-  esc(:(remember!($model, $(func.args...))))
+  key = string(func)
+  esc(:(@remember!($model, symbol($key), $func)))
+end
+
+macro history(model, func)
+  key = string(func)
+  esc(:(@get($model, symbol($key))))
 end
 
 # ==========================================================================
@@ -99,7 +101,7 @@ function train!{T<:Any, D<:LabeledDataSource}(
     solver::AbstractSolver,
     args...;
     max_iter::Int = 1000,
-    break_every::Int = -1, # -1 ... automatic, 0 ... off
+    break_every::Int = -1, # -1 = automatic, 0 = off
     nargs...)
   @assert max_iter > 0
   break_every = break_every < 0 ? safeFloor(max_iter / 10) : break_every
@@ -109,19 +111,25 @@ function train!{T<:Any, D<:LabeledDataSource}(
   function localCallback()
     model._iterations += 1
     if model._iterations % break_every == 0
-      @remember!(model, cost(model)) # This should always be cheap
+      remember!(model, :trainingCurve, cost(model)) # This should always be trivial cheap
       userCallback()
+      model._state._idx == @stateidx(:trystop) ? :stop : nothing
     end
   end
 
   # If callback is disabled only pass the empty function
   cb = enable_callback ? localCallback : defaultCallback
 
-  # Train native model
+  # Train the native model
   model._state = :training
-  itersOld = model._iterations
-  itersNew = train!(cb, model._native, data, solver, args...; max_iter=max_iter, nargs...)
-  model._iterations = itersOld + itersNew
-  model._state = :trained
+  try 
+    itersOld = model._iterations
+    itersNew = train!(cb, model._native, data, solver, args...; max_iter=max_iter, nargs...)
+    model._iterations = itersOld + itersNew
+    model._state = :trained
+  catch ex
+    print("An exception was thrown while training: ", ex)
+    model._state = :error
+  end
   model
 end

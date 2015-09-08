@@ -1,5 +1,5 @@
 export TrainingHistory
-export @push!, iterate
+export @push!, @iterate, @get, @length, iterate
 
 using DataStructures
 
@@ -14,55 +14,70 @@ else
 end
 
 type TrainingHistory{T<:Integer}
-  _storage::Dict{Function, Queue}
+  _storage::Dict{Symbol, Queue}
 end
 
 function TrainingHistory{T<:Integer}(::Type{T} = Int64)
-  TrainingHistory{T}(Dict{Function, Queue}())
+  TrainingHistory{T}(Dict{Symbol, Queue}())
 end
 
 # ==========================================================================
 # Functions
 
-function length{T<:Integer}(history::TrainingHistory{T}, f::Function)
-  length(history._storage[f])
+function length{T<:Integer}(history::TrainingHistory{T}, key::Symbol)
+  length(history._storage[key])
 end
 
-function push!{T<:Integer}(history::TrainingHistory{T},
-                           iteration::T,
-                           f::Function,
-                           args...; nargs...)
-  res = f(args...; nargs...)
+function push!{T<:Integer,V<:Any}(history::TrainingHistory{T},
+                                  iteration::T,
+                                  key::Symbol,
+                                  value::V)
   lastiter = zero(T)
-  if !haskey(history._storage, f)
+  if !haskey(history._storage, key)
     iteration >= lastiter || throw(ArgumentError("Iterations must not decrease over time"))
-    history._storage[f] = Queue(TupleType{T,typeof(res)})
+    history._storage[key] = Queue(TupleType{T,V})
   else
-    lastiter, _ = back(history._storage[f])
+    lastiter, _ = back(history._storage[key])
     iteration > lastiter || throw(ArgumentError("Iterations must increase over time"))
   end
-  enqueue!(history._storage[f], (iteration, res))
-  res
+  enqueue!(history._storage[key], (iteration, value))
+  value
 end
 
-macro push!(history, iteration, func)
-  esc(:(push!($history, $iteration, $(func.args...))))
+function iterate{T<:Integer}(history::TrainingHistory{T}, key::Symbol)
+  history._storage[key].store
 end
 
-function iterate{T<:Integer}(history::TrainingHistory{T}, f::Function)
-  history._storage[f].store
-end
-
-function get{T<:Integer}(history::TrainingHistory{T}, f::Function)
-  l = length(history, f)
-  k, v = front(history._storage[f])
+function get{T<:Integer}(history::TrainingHistory{T}, key::Symbol)
+  l = length(history, key)
+  k, v = front(history._storage[key])
   karray = zeros(T, l)
   varray = Array(typeof(v), l)
   i = 1
-  for (k, v) in iterate(history, f)
+  for (k, v) in iterate(history, key)
     karray[i] = k
     varray[i] = v
     i += 1
   end
   karray, varray
+end
+
+macro push!(history, iteration, func)
+  key = string(func)
+  esc(:(push!($history, $iteration, symbol($key), $func)))
+end
+
+macro iterate(history, func)
+  key = string(func)
+  esc(:(iterate($history, symbol($key))))
+end
+
+macro get(history, func)
+  key = string(func)
+  esc(:(get($history, symbol($key))))
+end
+
+macro length(history, func)
+  key = string(func)
+  esc(:(length($history, symbol($key))))
 end
