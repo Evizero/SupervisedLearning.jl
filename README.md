@@ -43,26 +43,25 @@ model = Classifier.LogisticRegression(l2_coef=0.1)
 #    otherwise (in most deterministic cases) Optim.jl
 #  * There will also be stochastic gradient descent with minibatches
 train!(model, trainSet, Solver.GradientDescent(), max_iter = 10000, break_every = 100) do
-
-  # You can easily store custom learning curves or other arbitrary values
-  # They will be linked to the associated iteration automatically
-  remember!(model, :testsetLoss, cost(model, testSet))
-  
   # You can also use the callback to execute any code
   # For example to print informative messages
   println("Testset accuracy: ", accuracy(model, testSet))
+  
+  # You can easily store custom learning curves or other arbitrary values
+  # They will be linked to the correct iteration automatically
+  remember!(model, :testsetCost, cost(model, testSet))
 end
 
 # The loss of the training set is stored by default and can be accessed with trainingCurve
 # x is a Vector{Int} of iterations with stepsize break_every,
-# y is a Vector{Float64} where y[i] is the trainSet cost at x[i]
+# y is a Vector{Float64} where y[i] is the cost of the trainSet at x[i]
 x, y = trainingCurve(model)
 print(lineplot(x, y, title = "Learning curve for trainSet"))
 
 # Customly stored curves can be accessed with "history"
 # x is a Vector{Int} of iterations (exact values depend on when you called remember!),
-# y is a Vector{Float64} where y[i] is the trainSet cost at x[i]
-x, y = history(model, :testsetLoss)
+# y is a Vector{Float64} where y[i] is the cost of the testSet at x[i]
+x, y = history(model, :testsetCost)
 print(lineplot(x, y, title = "Learning curve for testSet"))
 
 ŷ = predict(model, testSet) # what the model says
