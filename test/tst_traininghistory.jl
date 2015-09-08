@@ -26,12 +26,12 @@ for i = numbers
   @test @push!(history, i, f2(i - 1, "my", muh = .1)) == i - 1
 end
 
-for (i, v) in iterate(history, :myf)
+for (i, v) in enumerate(history, :myf)
   @test in(i, numbers)
   @test i + 1 == v
 end
 
-for (i, v) in @iterate(history, f2(i - 1, "my", muh = .1))
+for (i, v) in @enumerate(history, f2(i - 1, "my", muh = .1))
   @test in(i, numbers)
   @test i - 1 == v
 end
@@ -47,7 +47,7 @@ a1, a2 = @get(history, f2(i - 1, "my", muh = .1))
 @test a1 - 1 == a2
 
 @test_throws ArgumentError push!(history, 10, :myf, f(10, "yo", muh = .3))
-@test_throws KeyError iterate(history, :sign)
+@test_throws KeyError enumerate(history, :sign)
 @test_throws KeyError length(history, :sign)
 
 #-----------------------------------------------------------

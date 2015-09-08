@@ -1,9 +1,9 @@
 export TrainingHistory
-export @push!, @iterate, @get, @length, iterate
+export @push!, @enumerate, @get, @length
 
 using DataStructures
 
-import Base: length, push!, get
+import Base: length, push!, get, enumerate
 
 # ==========================================================================
 
@@ -44,7 +44,7 @@ function push!{T<:Integer,V<:Any}(history::TrainingHistory{T},
   value
 end
 
-function iterate{T<:Integer}(history::TrainingHistory{T}, key::Symbol)
+function enumerate{T<:Integer}(history::TrainingHistory{T}, key::Symbol)
   history._storage[key].store
 end
 
@@ -54,7 +54,7 @@ function get{T<:Integer}(history::TrainingHistory{T}, key::Symbol)
   karray = zeros(T, l)
   varray = Array(typeof(v), l)
   i = 1
-  for (k, v) in iterate(history, key)
+  for (k, v) in enumerate(history, key)
     karray[i] = k
     varray[i] = v
     i += 1
@@ -70,9 +70,9 @@ macro push!(history, iteration, func)
   esc(:(push!($history, $iteration, symbol($key), $func)))
 end
 
-macro iterate(history, func)
+macro enumerate(history, func)
   key = string(func)
-  esc(:(iterate($history, symbol($key))))
+  esc(:(enumerate($history, symbol($key))))
 end
 
 macro get(history, func)
