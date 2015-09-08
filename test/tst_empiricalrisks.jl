@@ -29,19 +29,20 @@ for solver in solvers, (desc, model) in models
   @test_throws StateError cost(model)
 
   #train!(model, data, solver, max_iter = 50, break_every = 5)
-  train!(model, trainSet, solver, max_iter = 50, break_every = 5) do
+  maxiter = 50
+  train!(model, trainSet, solver, max_iter = maxiter, break_every = 5) do
     @test state(model) == :training
     @test iterations(model) % 5 == 0
   end
 
   @test state(model) == :trained
-  @test 0 < iterations(model) <= 500
+  @test 0 < iterations(model) <= maxiter
   @test_approx_eq cost(model) -fitness(model)
   @test_approx_eq cost(model, trainSet) -fitness(model, trainSet)
   @test_approx_eq cost(model) cost(model, trainSet)
 
   x, y = trainingCurve(model)
-  plt = lineplot(x, y, ylim=[floor(minimum(y)), ceil(maximum(y))], width = 30, height = 2)
+  plt = lineplot(x, y, ylim=[floor(minimum(y)), ceil(maximum(y))], xlim=[0, maxiter], width = 30, height = 2)
   annotate!(plt, :r, 1, "$(name(model)) (test acc: $(round(accuracy(model, testSet),2)))")
   annotate!(plt, :r, 2, "$(typeof(solver)) $desc")
   annotate!(plt, :bl, ""); annotate!(plt, :br, "")
