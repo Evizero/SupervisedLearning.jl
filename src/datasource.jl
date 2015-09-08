@@ -136,7 +136,7 @@ labels{E<:ClassEncoding,G,N}(source::EncodedInMemoryLabeledDataSource{E,G,N}) =
 classDistribution{E<:ClassEncoding,G,N}(source::EncodedInMemoryLabeledDataSource{E,G,N}) =
   classDistribution(source.encoding, labeldecode(source.encoding, source.targets))
 
-function shuffle!(X::Array{Float64,2}, t::Array{Float64,1})
+function shuffle!{G}(X::Array{Float64,2}, t::Array{Float64,1}, g::Array{G,1})
   rows = size(X, 1)
   cols = size(X, 2)
   for c = 1:cols
@@ -145,11 +145,12 @@ function shuffle!(X::Array{Float64,2}, t::Array{Float64,1})
       @inbounds X[r,c], X[r,i] = X[r,i], X[r,c]
     end
     @inbounds t[c], t[i] = t[i], t[c]
+    @inbounds g[c], g[i] = g[i], g[c]
   end
   nothing
 end
 
-function shuffle!(X::Array{Float64,2}, t::Array{Float64,2})
+function shuffle!{G}(X::Array{Float64,2}, t::Array{Float64,2}, g::Array{G,1})
   rows = size(X, 1)
   cols = size(X, 2)
   rowsT = size(t, 1)
@@ -161,6 +162,7 @@ function shuffle!(X::Array{Float64,2}, t::Array{Float64,2})
     for r = 1:rowsT
       @inbounds t[r,c], t[r,i] = t[r,i], t[r,c]
     end
+    @inbounds g[c], g[i] = g[i], g[c]
   end
   nothing
 end
@@ -172,7 +174,7 @@ function splitTrainTest!{E<:ClassEncoding,G,N}(
   X = source.features
   t = source.targets
   g = source.groundtruth
-  shuffle!(X, t)
+  shuffle!(X, t, g)
   ce = source.encoding
   bias = source.bias
   n = nobs(source)
