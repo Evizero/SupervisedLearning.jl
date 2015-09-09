@@ -17,8 +17,10 @@ end
 tests = [
   "tst_classencoding.jl"
   "tst_datasource.jl"
+  "tst_state.jl"
   "tst_traininghistory.jl"
   "tst_integration.jl"
+  "tst_supervisedmodel.jl"
   "tst_empiricalrisks.jl"
 ]
 
