@@ -1,6 +1,6 @@
 # SupervisedLearning
 
-Work in progress for a front-end supervised learning framework.
+Work in progress for a front-end supervised learning framework. Currently the focus is on creating a pure Julia package for SVMs in [KSVM.jl](https://github.com/Evizero/KSVM.jl)
 
 [![Build Status](https://travis-ci.org/Evizero/SupervisedLearning.jl.svg?branch=master)](https://travis-ci.org/Evizero/SupervisedLearning.jl)
 
