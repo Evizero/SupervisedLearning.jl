@@ -1,5 +1,8 @@
 # SupervisedLearning
 
+[![Project Status: Suspended - Initial development has started, but there has not yet been a stable, usable release; work has been stopped for the time being but the author(s) intend on resuming work.](http://www.repostatus.org/badges/latest/suspended.svg)](http://www.repostatus.org/#suspended)
+[![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
+
 Work in progress for a front-end supervised learning framework. Currently the focus is on creating a pure Julia package for SVMs in [KSVM.jl](https://github.com/Evizero/KSVM.jl)
 
 [![Build Status](https://travis-ci.org/Evizero/SupervisedLearning.jl.svg?branch=master)](https://travis-ci.org/Evizero/SupervisedLearning.jl)
